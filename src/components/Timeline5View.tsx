@@ -6,258 +6,424 @@ import type { Community } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
 import { OwnedBadge } from "@/components/OwnedBadge";
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Tiny SVG scene helpers
-───────────────────────────────────────────────────────────────────────────── */
+// ─── Tiny reusable SVG pieces ───────────────────────────────────────────────
 
-function Stars({ count = 120 }: { count?: number }) {
-  const dots = Array.from({ length: count }, (_, i) => ({
-    cx: (((i * 137.508) % 100)).toFixed(2),
-    cy: (((i * 97.3) % 100)).toFixed(2),
-    r: (0.1 + (i % 5) * 0.08).toFixed(2),
-    o: (0.3 + (i % 7) * 0.1).toFixed(2),
-  }));
+const STARS = Array.from({ length: 200 }, (_, i) => ({
+  x: ((i * 137.5) % 100).toFixed(1),
+  y: ((i * 97.3) % 100).toFixed(1),
+  r: (0.1 + (i % 6) * 0.07).toFixed(2),
+  o: (0.2 + (i % 8) * 0.09).toFixed(2),
+  blink: i % 5 === 0,
+}));
+
+function StarField({ opacity = 1 }: { opacity?: number }) {
   return (
-    <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-      {dots.map((d, i) => (
-        <circle key={i} cx={`${d.cx}%`} cy={`${d.cy}%`} r={d.r} fill="white" opacity={d.o} />
+    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" style={{ opacity }}>
+      {STARS.map((s, i) => (
+        <circle key={i} cx={`${s.x}%`} cy={`${s.y}%`} r={s.r} fill="white" opacity={s.o}>
+          {s.blink && <animate attributeName="opacity" values={`${s.o};0.05;${s.o}`} dur={`${2 + (i % 4)}s`} repeatCount="indefinite" />}
+        </circle>
       ))}
     </svg>
   );
 }
 
-function Planet({ color = "#6d28d9", size = 280, x = 50, y = 60, rings = false }: { color?: string; size?: number; x?: number; y?: number; rings?: boolean }) {
+function GlowPlanet({ color, size, cx, cy, rings }: { color: string; size: number; cx: number; cy: number; rings?: boolean }) {
+  const id = `gp${color.replace("#", "")}`;
   return (
-    <svg className="absolute" style={{ width: size, height: size, left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)" }} viewBox="0 0 200 200">
+    <svg className="absolute" style={{ width: size, height: size, left: `${cx}%`, top: `${cy}%`, transform: "translate(-50%,-50%)" }} viewBox="0 0 200 200">
       <defs>
-        <radialGradient id={`pg-${x}`} cx="35%" cy="35%">
-          <stop offset="0%" stopColor={color} stopOpacity="1" />
-          <stop offset="100%" stopColor="#050510" stopOpacity="1" />
+        <radialGradient id={id} cx="35%" cy="35%">
+          <stop offset="0%" stopColor={color} />
+          <stop offset="100%" stopColor="#030308" />
         </radialGradient>
       </defs>
-      <circle cx="100" cy="100" r="90" fill={`url(#pg-${x})`} />
-      <circle cx="100" cy="100" r="90" fill="none" stroke="white" strokeOpacity="0.05" strokeWidth="1" />
-      {/* Surface details */}
-      <ellipse cx="70" cy="80" rx="20" ry="12" fill="white" fillOpacity="0.04" />
-      <ellipse cx="130" cy="120" rx="14" ry="8" fill="white" fillOpacity="0.03" />
-      {rings && (
-        <ellipse cx="100" cy="100" rx="130" ry="30" fill="none" stroke={color} strokeOpacity="0.4" strokeWidth="8" />
-      )}
+      <circle cx="100" cy="100" r="92" fill={color} fillOpacity="0.08" />
+      <circle cx="100" cy="100" r="88" fill={`url(#${id})`} />
+      {rings && <ellipse cx="100" cy="100" rx="138" ry="28" fill="none" stroke={color} strokeOpacity="0.35" strokeWidth="10" />}
+      <ellipse cx="72" cy="78" rx="18" ry="10" fill="white" fillOpacity="0.04" />
     </svg>
   );
 }
 
-function House({ x = 0, y = 0, color = "#34d399", nftSrc }: { x?: number; y?: number; color?: string; nftSrc?: string | null }) {
+function Asteroid({ x, y, size, angle }: { x: number; y: number; size: number; angle: number }) {
+  return (
+    <div className="absolute" style={{ left: `${x}%`, top: `${y}%`, width: size, height: size * 0.7, transform: `rotate(${angle}deg)`, background: "linear-gradient(135deg,#78716c,#44403c)", borderRadius: "40% 60% 55% 45%", boxShadow: "inset -4px -2px 8px rgba(0,0,0,0.6)" }} />
+  );
+}
+
+function DomHouse({ x, y, color, img }: { x: number; y: number; color: string; img?: string | null }) {
   return (
     <div className="absolute flex flex-col items-center" style={{ left: x, bottom: y }}>
-      <div className="relative" style={{ width: 80, height: 80 }}>
-        {/* Window / NFT portrait */}
-        <div className="absolute inset-0 overflow-hidden rounded-lg border-2" style={{ borderColor: color, boxShadow: `0 0 20px ${color}60`, background: "#0d0d1a" }}>
-          {nftSrc ? <img src={nftSrc} alt="resident" className="h-full w-full object-cover opacity-90" /> : <div className="h-full w-full bg-gradient-to-br from-violet-900 to-indigo-950" />}
+      <div className="relative" style={{ width: 72, height: 72 }}>
+        <div className="absolute -top-5 left-1/2 h-11 w-full -translate-x-1/2 rounded-t-full" style={{ background: `${color}15`, border: `2px solid ${color}50` }} />
+        <div className="overflow-hidden rounded-lg border-2" style={{ borderColor: color, boxShadow: `0 0 18px ${color}55`, background: "#0a0a18", width: 72, height: 72 }}>
+          {img ? <img src={img} alt="" className="h-full w-full object-cover opacity-85" /> : <div className="h-full w-full" style={{ background: `${color}20` }} />}
         </div>
-        {/* Dome top */}
-        <div className="absolute -top-4 left-1/2 h-10 w-full -translate-x-1/2 rounded-t-full" style={{ background: `${color}22`, border: `2px solid ${color}60` }} />
       </div>
-      {/* Base */}
-      <div className="h-2 w-16 rounded-sm" style={{ background: color, opacity: 0.4 }} />
+      <div style={{ width: 56, height: 6, background: `${color}40`, borderRadius: 2 }} />
     </div>
   );
 }
 
-function Rocket({ x = "50%", y = 0, nftSrc }: { x?: string; y?: number; nftSrc?: string | null }) {
+function Rocket({ bottom, nftSrc }: { bottom: number; nftSrc?: string | null }) {
   return (
-    <div className="absolute flex flex-col items-center" style={{ left: x, bottom: y, transform: "translateX(-50%)" }}>
-      {/* NFT window */}
-      <div className="relative mb-1 overflow-hidden rounded-full border-2 border-cyan-400" style={{ width: 56, height: 56, boxShadow: "0 0 20px rgba(34,211,238,0.5)" }}>
-        {nftSrc ? <img src={nftSrc} alt="pilot" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-cyan-900" />}
+    <div className="absolute left-1/2 flex flex-col items-center" style={{ bottom, transform: "translateX(-50%)" }}>
+      <div className="overflow-hidden rounded-full border-2 border-cyan-400 mb-1" style={{ width: 52, height: 52, boxShadow: "0 0 24px rgba(34,211,238,0.55)" }}>
+        {nftSrc ? <img src={nftSrc} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-cyan-900" />}
       </div>
-      {/* Rocket body */}
-      <svg width="48" height="80" viewBox="0 0 48 80">
-        <defs>
-          <linearGradient id="rg" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#64748b" />
-            <stop offset="100%" stopColor="#94a3b8" />
-          </linearGradient>
-        </defs>
-        <ellipse cx="24" cy="16" rx="12" ry="16" fill="#94a3b8" />
-        <rect x="12" y="14" width="24" height="40" fill="url(#rg)" />
-        <polygon points="0,54 12,14 12,54" fill="#475569" />
-        <polygon points="48,54 36,14 36,54" fill="#475569" />
-        {/* Exhaust */}
-        <ellipse cx="24" cy="56" rx="8" ry="4" fill="#f97316" opacity="0.9" />
-        <ellipse cx="24" cy="62" rx="5" ry="5" fill="#fbbf24" opacity="0.6" />
-        <ellipse cx="24" cy="70" rx="3" ry="8" fill="#ef4444" opacity="0.4" />
+      <svg width="44" height="76" viewBox="0 0 48 80">
+        <defs><linearGradient id="rk" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#64748b" /><stop offset="100%" stopColor="#94a3b8" /></linearGradient></defs>
+        <ellipse cx="24" cy="14" rx="12" ry="15" fill="#94a3b8" />
+        <rect x="12" y="12" width="24" height="42" fill="url(#rk)" />
+        <polygon points="0,54 12,12 12,54" fill="#475569" />
+        <polygon points="48,54 36,12 36,54" fill="#475569" />
+        <ellipse cx="24" cy="56" rx="9" ry="4" fill="#f97316" opacity="0.9" />
+        <ellipse cx="24" cy="63" rx="6" ry="6" fill="#fbbf24" opacity="0.65" />
+        <ellipse cx="24" cy="72" rx="3" ry="9" fill="#ef4444" opacity="0.4" />
       </svg>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Main component
-───────────────────────────────────────────────────────────────────────────── */
+// ─── Narrative text blocks per scene ────────────────────────────────────────
 
-export function Timeline5View({
-  community,
-  listings,
-  ownedMints = [],
-}: {
-  community: Community;
-  stats: MagicEdenStats | null;
-  listings: MagicEdenListing[];
-  statsError?: string | null;
-  ownedMints?: string[];
+const SCENES = [
+  { id: 0, name: "The Void",       range: [0,    0.10], text: "Before time itself was recorded on-chain…" },
+  { id: 1, name: "The Awakening",  range: [0.10, 0.20], text: "Light tore through the dark. The genesis block fired." },
+  { id: 2, name: "The Signal",     range: [0.20, 0.30], text: "A mysterious signal emerged from the coordinates." },
+  { id: 3, name: "First Contact",  range: [0.30, 0.42], text: "The explorers approached the alien system cautiously." },
+  { id: 4, name: "The Village",    range: [0.42, 0.54], text: "A civilization of NFT holders thrived on the surface." },
+  { id: 5, name: "The Oracle",     range: [0.54, 0.64], text: "The ancient tower held the collection's deepest lore." },
+  { id: 6, name: "The Market",     range: [0.64, 0.74], text: "Traders gathered beneath the neon-lit exchange arches." },
+  { id: 7, name: "Ignition",       range: [0.74, 0.84], text: "Countdown began. One brave holder would carry the mission." },
+  { id: 8, name: "The Voyage",     range: [0.84, 0.92], text: "Through asteroid fields and nebula clouds they journeyed." },
+  { id: 9, name: "New World",      range: [0.92, 1.00], text: "A new planet. A new chapter. The collection had arrived." },
+];
+
+function activeScene(p: number) {
+  return SCENES.find(s => p >= s.range[0] && p <= s.range[1]) ?? SCENES[SCENES.length - 1];
+}
+
+function inRange(p: number, lo: number, hi: number) { return p >= lo && p <= hi; }
+
+// Fade in/out at edges, hold full opacity in the middle 60% of each scene
+function fade(p: number, lo: number, peak: number, hi: number) {
+  if (p < lo || p > hi) return 0;
+  if (p <= peak) return (p - lo) / (peak - lo);
+  return 1 - (p - peak) / (hi - peak);
+}
+
+// Holds at 1.0 for the middle portion, fades in/out at edges only
+function sceneFade(p: number, lo: number, hi: number, edgeFraction = 0.18) {
+  if (p < lo || p > hi) return 0;
+  const range = hi - lo;
+  const fadeW = range * edgeFraction;
+  if (p < lo + fadeW) return (p - lo) / fadeW;
+  if (p > hi - fadeW) return (hi - p) / fadeW;
+  return 1;
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
+
+export function Timeline5View({ community, listings, ownedMints = [] }: {
+  community: Community; stats: MagicEdenStats | null;
+  listings: MagicEdenListing[]; statsError?: string | null; ownedMints?: string[];
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0); // 0..1
+  const ref = useRef<HTMLDivElement>(null);
+  const [p, setP] = useState(0);
+  const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    const el = scrollRef.current;
+    const el = ref.current;
     if (!el) return;
     const onScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const totalScroll = el.scrollHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      setProgress(Math.min(1, Math.max(0, scrolled / totalScroll)));
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        const navH = 80; // navbar height in px
+        const visibleScrollStart = navH;
+        const totalScroll = el.scrollHeight - window.innerHeight;
+        const scrolled = window.scrollY;
+        setP(Math.min(1, Math.max(0, scrolled / totalScroll)));
+      });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  // Scene thresholds (0..1)
-  const scene1 = progress < 0.2;             // Deep space intro
-  const scene2 = progress >= 0.15 && progress < 0.45;  // Village on planet
-  const scene3 = progress >= 0.4 && progress < 0.65;   // Rocket on pad
-  const scene4 = progress >= 0.6 && progress < 0.85;   // Launch / travel
-  const scene5 = progress >= 0.8;            // Arrival
-
-  // Parallax values derived from progress
-  const planetY   = 60 - progress * 40;       // planet rises
-  const planetSize = 150 + progress * 350;     // planet grows
-  const rocketY   = Math.max(0, (progress - 0.6) * 600 - 80); // rocket flies up
-  const starsOpacity = Math.max(0, 1 - progress * 0.3);
-
   const nft = (i: number) => listings[i] ?? null;
+  const scene = activeScene(p);
+
+  // Derived parallax values
+  const planetSize   = 80  + p * 480;
+  const planetY      = 110 - p * 60;
+  const rocketBottom = Math.max(-200, (p - 0.74) * 1800 - 80);
+  const starOpacity  = Math.max(0.05, 1 - p * 0.5);
+  const nebulaColor1 = p < 0.5 ? "#3b076488" : "#0f3460aa";
 
   return (
-    <div ref={scrollRef} style={{ height: "550vh" }} className="relative">
-      {/* STICKY VIEWPORT */}
-      <div className="sticky top-0 h-screen overflow-hidden bg-[#04040f]">
+    <div ref={ref} style={{ height: "1800vh" }} className="relative">
+      <div className="sticky top-20 h-[calc(100vh-5rem)] overflow-hidden bg-[#03030c]">
 
-        {/* ── Layer 0: Stars ── */}
-        <div className="absolute inset-0 transition-opacity duration-700" style={{ opacity: starsOpacity }}>
-          <Stars count={160} />
+        {/* Stars */}
+        <StarField opacity={starOpacity} />
+
+        {/* Nebula layers — no transition, instant on scroll */}
+        <div className="pointer-events-none absolute inset-0" style={{
+          background: `radial-gradient(ellipse at 15% 40%, ${nebulaColor1} 0%, transparent 55%), radial-gradient(ellipse at 85% 70%, ${p > 0.6 ? "#16325588" : "#1e1b4b88"} 0%, transparent 50%)`,
+        }} />
+
+        {/* Surface horizon glow (scene 4-6) — no transition */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48" style={{
+          background: "linear-gradient(to top, #2e1065aa, transparent)",
+          opacity: sceneFade(p, 0.38, 0.68),
+        }} />
+
+        {/* Green world glow (scene 9-10) — no transition */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64" style={{
+          background: "linear-gradient(to top, #14532daa, transparent)",
+          opacity: sceneFade(p, 0.88, 1.0, 0.15),
+        }} />
+
+        {/* ── Main planet — no transition ── */}
+        <div className="absolute inset-0" style={{ transform: `translateY(${(p - 0.4) * -60}px)` }}>
+          <GlowPlanet color={p > 0.85 ? "#16a34a" : "#7c3aed"} size={planetSize} cx={50} cy={planetY} rings={p < 0.65} />
         </div>
 
-        {/* ── Layer 1: Nebula gradient ── */}
-        <div
-          className="absolute inset-0 transition-all duration-1000"
-          style={{
-            background: scene5
-              ? "radial-gradient(ellipse at 50% 80%, #14532d44 0%, transparent 70%)"
-              : scene4
-              ? "radial-gradient(ellipse at 50% 100%, #1e3a5f55 0%, transparent 60%)"
-              : "radial-gradient(ellipse at 20% 50%, #3b0764aa 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #1e1b4baa 0%, transparent 50%)",
-          }}
-        />
-
-        {/* ── Layer 2: Planet ── */}
-        <div className="absolute inset-0 transition-all duration-700" style={{ transform: `translateY(${(progress - 0.5) * -40}px)` }}>
-          <Planet
-            color={scene5 ? "#16a34a" : "#6d28d9"}
-            size={planetSize}
-            x={50}
-            y={planetY}
-            rings={!scene4 && !scene5}
-          />
+        {/* ── Distant small planet — no transition ── */}
+        <div className="absolute inset-0" style={{ opacity: sceneFade(p, 0.08, 0.38) }}>
+          <GlowPlanet color="#0ea5e9" size={90} cx={75} cy={25} />
         </div>
 
-        {/* ── Layer 3: Village (Scene 2) ── */}
-        <div
-          className="absolute bottom-0 left-0 right-0 transition-all duration-700"
-          style={{ opacity: scene2 ? 1 : 0, transform: scene2 ? "translateY(0)" : "translateY(60px)" }}
-        >
-          {/* Ground */}
-          <div className="absolute bottom-0 left-0 right-0 h-28" style={{ background: "linear-gradient(to top, #1a0a3b, transparent)" }} />
-          {/* Houses */}
-          <House x={120} y={60} color="#a78bfa" nftSrc={nft(0)?.image ?? null} />
-          <House x={260} y={80} color="#60a5fa" nftSrc={nft(1)?.image ?? null} />
-          <House x={400} y={55} color="#34d399" nftSrc={nft(2)?.image ?? null} />
-          <House x={600} y={70} color="#f472b6" nftSrc={nft(3)?.image ?? null} />
-          <House x={760} y={60} color="#fb923c" nftSrc={nft(4)?.image ?? null} />
-        </div>
+        {/* ── Sun rising — no transition ── */}
+        <div className="absolute" style={{
+          width: 160, height: 160,
+          bottom: `${-80 + sceneFade(p, 0.10, 0.44) * 60}px`,
+          right: "8%",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, #fde68a, #f59e0b, transparent 70%)",
+          opacity: sceneFade(p, 0.10, 0.44),
+          boxShadow: "0 0 80px 30px rgba(251,191,36,0.3)",
+        }} />
 
-        {/* ── Layer 4: Rocket on launchpad (Scene 3) ── */}
-        <div
-          className="absolute inset-0 transition-all duration-700"
-          style={{ opacity: scene3 ? 1 : 0 }}
-        >
-          <div className="absolute bottom-0 left-0 right-0 h-24" style={{ background: "linear-gradient(to top, #0f172a, transparent)" }} />
-          {/* Launchpad */}
-          <div className="absolute bottom-20 left-1/2 h-4 w-40 -translate-x-1/2 rounded-sm" style={{ background: "#334155", boxShadow: "0 0 20px rgba(34,211,238,0.3)" }} />
-          <Rocket x="50%" y={rocketY > 0 ? -100 : 80} nftSrc={nft(0)?.image ?? null} />
-        </div>
-
-        {/* ── Layer 5: Flying rocket (Scene 4) ── */}
-        {scene4 && (
-          <div
-            className="absolute left-1/2 transition-all duration-300"
-            style={{ bottom: rocketY, transform: "translateX(-50%)" }}
-          >
-            <Rocket y={0} nftSrc={nft(0)?.image ?? null} />
+        {/* ── Hologram NFT signal — no transition ── */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ opacity: sceneFade(p, 0.20, 0.33) }}>
+          <div className="flex flex-col items-center gap-3">
+            <p className="font-mono text-xs tracking-widest text-cyan-400 animate-pulse">INCOMING TRANSMISSION</p>
+            {nft(0) && (
+              <div className="overflow-hidden rounded-xl border-2 border-cyan-400" style={{ width: 140, height: 140, boxShadow: "0 0 40px rgba(34,211,238,0.5)" }}>
+                <img src={nft(0)!.image!} alt="" className="h-full w-full object-cover opacity-80" />
+              </div>
+            )}
+            <p className="font-mono text-[10px] text-cyan-300 opacity-70">{nft(0)?.tokenMint.slice(0, 16)}...</p>
           </div>
-        )}
+        </div>
 
-        {/* ── Layer 6: Arrival text (Scene 5) ── */}
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center transition-all duration-1000"
-          style={{ opacity: scene5 ? 1 : 0, transform: scene5 ? "translateY(0)" : "translateY(40px)" }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-400">Destination Reached</p>
-          <h2 className="mt-4 text-center text-5xl font-black text-white md:text-6xl">{community.name}</h2>
-          <p className="mx-auto mt-4 max-w-md text-center text-stone-400">{community.description}</p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-            {listings.slice(0, 6).map((listing, i) => (
-              <a
-                key={listing.tokenMint}
-                href={`https://magiceden.io/item-details/${listing.tokenMint}`}
-                target="_blank"
-                rel="noreferrer"
-                className="group relative overflow-hidden rounded-xl border border-white/10 transition hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(52,211,153,0.2)]"
-                style={{ width: 100, height: 100 }}
-              >
-                {listing.image && <Image src={listing.image} alt={listing.name} fill className="object-cover" unoptimized />}
-                {ownedMints.includes(listing.tokenMint) && (
-                  <div className="absolute inset-0 flex items-end justify-center pb-2">
-                    <span className="text-[8px] font-bold uppercase tracking-widest text-blue-300">Owned</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-emerald-500/0 transition group-hover:bg-emerald-500/10" />
-              </a>
+        {/* ── Village ground & houses — no transition ── */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: sceneFade(p, 0.40, 0.57), transform: `translateY(${sceneFade(p, 0.40, 0.57) < 0.05 ? 40 : 0}px)` }}>
+          <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: "linear-gradient(to top, #1a0a3b, transparent)" }} />
+          {([
+            { x: 60,  y: 60,  c: "#a78bfa", ni: 1 },
+            { x: 180, y: 80,  c: "#60a5fa", ni: 2 },
+            { x: 320, y: 55,  c: "#34d399", ni: 3 },
+            { x: 460, y: 75,  c: "#f472b6", ni: 4 },
+            { x: 600, y: 60,  c: "#fb923c", ni: 5 },
+            { x: 740, y: 80,  c: "#facc15", ni: 6 },
+            { x: 880, y: 58,  c: "#818cf8", ni: 7 },
+            { x: 1020,y: 70,  c: "#2dd4bf", ni: 8 },
+          ] as {x:number;y:number;c:string;ni:number}[]).map((h) => (
+            <DomHouse key={h.x} x={h.x} y={h.y} color={h.c} img={nft(h.ni)?.image} />
+          ))}
+        </div>
+
+        {/* ── Oracle tower — no transition ── */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center" style={{ opacity: sceneFade(p, 0.52, 0.67) }}>
+          <div className="overflow-hidden rounded-t-full border-2 border-violet-400 mb-1" style={{ width: 80, height: 80, boxShadow: "0 0 30px rgba(167,139,250,0.6)" }}>
+            {nft(0) && <img src={nft(0)!.image!} alt="" className="h-full w-full object-cover" />}
+          </div>
+          <div style={{ width: 16, height: 120, background: "linear-gradient(to bottom, #7c3aed, #1e1b4b)", boxShadow: "0 0 20px rgba(124,58,237,0.4)" }} />
+          <div style={{ width: 80, height: 8, background: "#7c3aed44", borderRadius: 4 }} />
+          <p className="mt-3 font-mono text-[10px] tracking-widest text-violet-400">THE ORACLE</p>
+        </div>
+
+        {/* ── Market stalls — no transition ── */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: sceneFade(p, 0.62, 0.76) }}>
+          <div className="absolute bottom-0 left-0 right-0 h-28" style={{ background: "linear-gradient(to top, #0f172a, transparent)" }} />
+          <div className="flex justify-around items-end pb-4 px-8">
+            {listings.slice(1, 6).map((l, i) => (
+              <div key={l.tokenMint} className="flex flex-col items-center gap-1">
+                <div className="overflow-hidden rounded-lg border" style={{ width: 64, height: 64, borderColor: "#60a5fa55", boxShadow: "0 0 12px rgba(96,165,250,0.3)" }}>
+                  {l.image && <img src={l.image} alt="" className="h-full w-full object-cover" />}
+                </div>
+                <div className="text-[8px] font-mono text-blue-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</div>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* ── Scene title HUD ── */}
-        <div className="absolute left-6 top-6 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
-            {scene5 ? "Chapter 5" : scene4 ? "Chapter 4" : scene3 ? "Chapter 3" : scene2 ? "Chapter 2" : "Chapter 1"}
-          </p>
-          <p className="text-sm font-semibold text-white/80">
-            {scene5 ? "New World" : scene4 ? "The Voyage" : scene3 ? "Ignition" : scene2 ? "The Village" : "Deep Space"}
-          </p>
+        {/* ── Launchpad + rocket on pad — no transition ── */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: sceneFade(p, 0.72, 0.86) }}>
+          <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: "linear-gradient(to top, #0c1a2e, transparent)" }} />
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 h-3 w-48 rounded" style={{ background: "#334155", boxShadow: "0 0 20px rgba(34,211,238,0.4)" }} />
+          <div className="absolute bottom-18 left-1/3 -translate-x-1/2 h-20 w-1 rounded-full" style={{ background: "linear-gradient(to top, #f97316, transparent)" }} />
+          <div className="absolute bottom-18 left-2/3 -translate-x-1/2 h-20 w-1 rounded-full" style={{ background: "linear-gradient(to top, #f97316, transparent)" }} />
+          {p < 0.83 && <Rocket bottom={64} nftSrc={nft(1)?.image} />}
         </div>
 
-        {/* ── Progress bar ── */}
-        <div className="absolute bottom-4 left-1/2 w-40 -translate-x-1/2 overflow-hidden rounded-full bg-white/5">
-          <div
-            className="h-0.5 rounded-full bg-gradient-to-r from-violet-500 via-cyan-400 to-emerald-400 transition-all duration-150"
-            style={{ width: `${progress * 100}%` }}
-          />
+        {/* ── Flying rocket (scene 8) ── */}
+        {inRange(p, 0.83, 0.93) && <Rocket bottom={rocketBottom} nftSrc={nft(1)?.image} />}
+
+        {/* ── Asteroids — no transition ── */}
+        <div className="absolute inset-0" style={{ opacity: sceneFade(p, 0.82, 0.94) }}>
+          {[{x:15,y:20,s:32,a:25},{x:80,y:35,s:20,a:-15},{x:30,y:60,s:44,a:40},{x:70,y:70,s:26,a:-30},{x:50,y:15,s:18,a:60},{x:88,y:55,s:36,a:10}].map((ast,i)=>(
+            <Asteroid key={i} x={ast.x} y={ast.y} size={ast.s} angle={ast.a} />
+          ))}
+        </div>
+
+        {/* ── FINAL ENDING SCREEN — no transition ── */}
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{ opacity: sceneFade(p, 0.90, 1.0, 0.10) }}
+        >
+          {/* Dark overlay with scanlines for cinematic feel */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, #030310ee, #061a0fcc)" }} />
+          <div className="pointer-events-none absolute inset-0" style={{
+            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px)",
+          }} />
+
+          {/* Radial light burst from planet */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{
+            width: 800, height: 800,
+            background: "radial-gradient(circle, rgba(22,163,74,0.18) 0%, transparent 65%)",
+            borderRadius: "50%",
+          }} />
+
+          {/* Content — scrollable inside the sticky frame */}
+          <div className="absolute inset-0 flex flex-col items-center justify-start overflow-y-auto py-12 px-6">
+
+            {/* Chapter label */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px w-16 bg-emerald-500/40" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-emerald-400">Final Chapter — The Arrival</p>
+              <div className="h-px w-16 bg-emerald-500/40" />
+            </div>
+
+            {/* Epic title */}
+            <h2 className="text-center text-5xl font-black leading-tight text-white drop-shadow-[0_0_40px_rgba(52,211,153,0.4)] md:text-6xl">
+              {community.name}
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-center text-sm leading-relaxed text-stone-400">
+              {community.description}
+            </p>
+
+            {/* Divider */}
+            <div className="my-8 flex w-full max-w-xl items-center gap-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-emerald-500/30" />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-emerald-600">The Collection</span>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-emerald-500/30" />
+            </div>
+
+            {/* NFT Grid — full display */}
+            <div className="grid grid-cols-4 gap-3 w-full max-w-xl sm:grid-cols-4 md:grid-cols-4">
+              {listings.slice(0, 12).map((l, i) => (
+                <a
+                  key={l.tokenMint}
+                  href={`https://magiceden.io/item-details/${l.tokenMint}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative overflow-hidden border border-white/10 transition-all duration-300 hover:border-emerald-500/60 hover:shadow-[0_0_24px_rgba(52,211,153,0.25)] hover:-translate-y-1"
+                  style={{ borderRadius: 12, aspectRatio: "1" }}
+                >
+                  {l.image && <Image src={l.image} alt={l.name} fill className="object-cover" unoptimized />}
+
+                  {/* Hover overlay with name + price */}
+                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <p className="truncate text-[9px] font-bold text-white">{l.name}</p>
+                    <p className="text-[8px] text-emerald-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</p>
+                  </div>
+
+                  {/* Owned badge */}
+                  {ownedMints.includes(l.tokenMint) && (
+                    <div className="absolute left-1.5 top-1.5 rounded-full bg-blue-500/80 px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                      Owned
+                    </div>
+                  )}
+                </a>
+              ))}
+            </div>
+
+            {/* CTA button */}
+            <a
+              href={`https://magiceden.io/marketplace/${listings[0]?.tokenMint ?? ""}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-10 flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 px-8 py-3 text-sm font-bold uppercase tracking-widest text-emerald-300 shadow-[0_0_30px_rgba(52,211,153,0.2)] transition-all hover:bg-emerald-500/20 hover:shadow-[0_0_50px_rgba(52,211,153,0.4)]"
+            >
+              <span>Explore Full Collection</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
+
+            {/* Final tagline */}
+            <p className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-700">
+              End of Transmission
+            </p>
+
+          </div>
+        </div>
+
+        {/* ── Narrative overlay text — no transition ── */}
+        <div className="pointer-events-none absolute left-6 top-8 max-w-xs" style={{ opacity: p > 0.85 ? 0 : 1 }}>
+          <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-stone-600">{scene.name}</p>
+          <p className="mt-1 text-sm font-light italic text-stone-400">{scene.text}</p>
+        </div>
+
+        {/* ── Progress scrollbar (right side) ── */}
+        <div className="absolute right-0 top-0 bottom-0 w-5 flex items-stretch py-3 bg-black/25 backdrop-blur-sm border-l border-white/5">
+          {/* Full-height track */}
+          <div className="relative mx-auto w-0.5 flex-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+
+            {/* Glowing thumb — slides with scroll */}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 w-1.5 rounded-full"
+              style={{
+                background: "linear-gradient(to bottom, #8b5cf6, #22d3ee, #34d399)",
+                boxShadow: "0 0 8px rgba(34,211,238,0.7)",
+                height: `${100 / SCENES.length}%`,
+                top: `${Math.min(p * 100, 100 - 100 / SCENES.length)}%`,
+              }}
+            />
+
+            {/* Scene dots — fixed at proportional positions inside track */}
+            {SCENES.map((s, i) => {
+              const isActive = p >= s.range[0] && p <= s.range[1];
+              const isPast   = p > s.range[1];
+              return (
+                <div
+                  key={i}
+                  className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{
+                    top: `${s.range[0] * 100}%`,
+                    width:  isActive ? 7 : 4,
+                    height: isActive ? 7 : 4,
+                    background: isActive ? "#a78bfa" : isPast ? "#6d28d9" : "#374151",
+                    boxShadow: isActive ? "0 0 8px #a78bfa" : "none",
+                    transition: "width 0.15s, height 0.15s",
+                  }}
+                />
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Scroll hint ── */}
-        {progress < 0.05 && (
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-xs uppercase tracking-widest text-stone-500">
+        {p < 0.04 && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-stone-500">
             <span>Scroll to begin</span>
             <div className="h-8 w-px animate-bounce bg-gradient-to-b from-violet-400 to-transparent" />
           </div>
