@@ -21,7 +21,7 @@ export function Navbar() {
           </svg>
         </div>
         <span className="text-xl font-bold tracking-wider text-white">
-          EchoSpace<span className="text-emerald-400">gallery</span>
+          MintedLore<span className="text-emerald-400">Gallery</span>
         </span>
       </Link>
 
