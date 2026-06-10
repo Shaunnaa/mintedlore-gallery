@@ -1,0 +1,70 @@
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3202693583'
+}
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3401279147'
+}
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3401279147'
+}
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3401279147'
+}
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3202693583'
+}
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3202693583'
+}
+ ⨯ [TypeError: Cannot read properties of undefined (reading 'call')] {
+  digest: '117850028'
+}
+ ⨯ Error: Could not find the module "D:\Solana\group4-gallery\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3202693583'
+}
+[TypeError: Cannot read properties of undefined (reading 'call')]
+ ⨯ [TypeError: Cannot read properties of undefined (reading 'call')]
+ ⨯ [TypeError: Cannot read properties of undefined (reading 'call')] {
+  page: '/mad_lads'
+}
+ ⨯ Failed to generate static paths for /[group_slug]:
+[Error: Cannot find module './vendor-chunks/@solana.js'
+Require stack:
+- D:\Solana\group4-gallery\.next\server\webpack-runtime.js
+- D:\Solana\group4-gallery\.next\server\app\[group_slug]\page.js
+- D:\Solana\group4-gallery\node_modules\next\dist\server\require.js
+- D:\Solana\group4-gallery\node_modules\next\dist\server\load-components.js
+- D:\Solana\group4-gallery\node_modules\next\dist\build\utils.js
+- D:\Solana\group4-gallery\node_modules\next\dist\server\dev\static-paths-worker.js
+- D:\Solana\group4-gallery\node_modules\next\dist\compiled\jest-worker\processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⨯ Failed to generate static paths for /[group_slug]:
+[Error: Cannot find module './vendor-chunks/@solana.js'
+Require stack:
+- D:\Solana\group4-gallery\.next\server\webpack-runtime.js
+- D:\Solana\group4-gallery\.next\server\app\[group_slug]\page.js
+- D:\Solana\group4-gallery\node_modules\next\dist\server\require.js
+- D:\Solana\group4-gallery\node_modules\next\dist\server\load-components.js
+- D:\Solana\group4-gallery\node_modules\next\dist\build\utils.js
+- D:\Solana\group4-gallery\node_modules\next\dist\server\dev\static-paths-worker.js
+- D:\Solana\group4-gallery\node_modules\next\dist\compiled\jest-worker\processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'D:\Solana\group4-gallery\.next\cache\webpack\client-development\15.pack.gz_' -> 'D:\Solana\group4-gallery\.next\cache\webpack\client-development\15.pack.gz'

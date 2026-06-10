@@ -1,0 +1,100 @@
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://172.25.48.1:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.6s
+ ○ Compiling /[group_slug] ...
+ ✓ Compiled /[group_slug] in 4s (1231 modules)
+ GET /Group0 200 in 4268ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1831ms (1248 modules)
+ GET / 200 in 2160ms
+ GET /lore 200 in 108ms
+ GET /guild 200 in 99ms
+ GET /lore 200 in 82ms
+ GET /guild 200 in 81ms
+ GET /lore 200 in 101ms
+ GET /guild 200 in 83ms
+ GET /lore 200 in 80ms
+ GET /guild 200 in 31ms
+ GET /lore 200 in 86ms
+ GET /guild 200 in 94ms
+ GET /lore 200 in 32ms
+ GET /guild 200 in 98ms
+ GET /lore 200 in 77ms
+ GET /guild 200 in 74ms
+ GET /lore 200 in 75ms
+ GET / 200 in 59ms
+ GET /guild 200 in 76ms
+ GET /lore 200 in 108ms
+ GET /guild 200 in 73ms
+ GET /lore 200 in 100ms
+ GET /guild 200 in 81ms
+ GET /lore 200 in 76ms
+ GET /guild 200 in 73ms
+ GET /lore 200 in 75ms
+ GET /guild 200 in 76ms
+ GET /lore 200 in 74ms
+ GET / 200 in 22ms
+ GET /guild 200 in 76ms
+ GET /lore 200 in 73ms
+ GET /guild 200 in 74ms
+ GET / 200 in 24ms
+ GET /guild 200 in 71ms
+ GET /lore 200 in 77ms
+ GET /lore 200 in 76ms
+ GET /guild 200 in 80ms
+ GET /lore 200 in 84ms
+ GET /guild 200 in 75ms
+ GET /lore 200 in 75ms
+ GET /guild 200 in 30ms
+ GET /lore 200 in 74ms
+ GET /guild 200 in 86ms
+ GET /lore 200 in 33ms
+ GET /guild 200 in 86ms
+ GET /lore 200 in 76ms
+ ✓ Compiled in 1990ms (1262 modules)
+ GET /lore 200 in 244ms
+ GET / 200 in 33ms
+ ✓ Compiled in 1061ms (501 modules)
+ GET / 200 in 124ms
+ ✓ Compiled in 836ms (501 modules)
+ GET / 200 in 36ms
+ GET /mad_lads 200 in 117ms
+ GET /famous_fox_federation 200 in 78ms
+ GET /mad_lads 200 in 76ms
+ GET / 200 in 23ms
+ GET /famous_fox_federation 200 in 78ms
+ GET /mad_lads 200 in 78ms
+ GET /famous_fox_federation 200 in 73ms
+ GET /mad_lads 200 in 77ms
+ GET /mad_lads 200 in 113ms
+ GET /famous_fox_federation 200 in 155ms
+ GET /mad_lads 200 in 54ms
+ GET /famous_fox_federation 200 in 89ms
+ GET /mad_lads 200 in 86ms
+ ✓ Compiled in 2.9s (1268 modules)
+ GET /mad_lads 200 in 249ms
+ ✓ Compiled in 1362ms (1268 modules)
+ GET /mad_lads 200 in 223ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 4s (1600 modules)
+ GET /mad_lads 200 in 2786ms
+ GET /mad_lads 200 in 31ms
+ GET /mad_lads 500 in 7443ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1114ms (1605 modules)
+ GET /mad_lads 404 in 1499ms
+ ✓ Compiled in 2.7s (1614 modules)
+ ✓ Compiled in 2.4s (1614 modules)
+ ✓ Compiled in 3.7s (1614 modules)
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://172.25.48.1:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.6s
+[?25h
