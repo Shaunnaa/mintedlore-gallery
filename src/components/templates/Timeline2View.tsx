@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { Community } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
-import { OwnedBadge } from "@/components/OwnedBadge";
+import { OwnedBadge } from "@/components/wallet/OwnedBadge";
 
 export function Timeline2View({
   community,
@@ -79,9 +79,9 @@ export function Timeline2View({
           </p>
 
           <blockquote className="my-10 rounded-r-xl border-l-4 border-emerald-500 bg-emerald-500/5 py-6 pl-6 pr-4 italic text-emerald-100 shadow-inner">
-            "To gaze into the Sphere is to see the immutable truth of the chain.
+            &quot;To gaze into the Sphere is to see the immutable truth of the chain.
             It does not lie, it does not rewrite—it only observes the flow of
-            time and state."
+            time and state.&quot;
           </blockquote>
 
           <p>

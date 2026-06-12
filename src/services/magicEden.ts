@@ -52,6 +52,10 @@ export const LISTINGS_PAGE_SIZE = 12;
 async function fetchMagicEden<T>(endpoint: string): Promise<ApiResult<T>> {
   try {
     const response = await fetch(`${MAGIC_EDEN_BASE_URL}${endpoint}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+      },
       next: {
         revalidate: 60,
       },

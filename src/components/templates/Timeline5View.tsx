@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { Community } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
-import { OwnedBadge } from "@/components/OwnedBadge";
+import { OwnedBadge } from "@/components/wallet/OwnedBadge";
 
 // ─── Tiny reusable SVG pieces ───────────────────────────────────────────────
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { GalleryView } from "@/components/GalleryView";
-import { TimelineView as Timeline1View } from "@/components/TimelineView";
-import { Timeline2View } from "@/components/Timeline2View";
-import { Timeline3View } from "@/components/Timeline3View";
-import { Timeline4View } from "@/components/Timeline4View";
-import { Timeline5View } from "@/components/Timeline5View";
+import { GalleryView } from "@/components/templates/GalleryView";
+import { TimelineView as Timeline1View } from "@/components/templates/TimelineView";
+import { Timeline2View } from "@/components/templates/Timeline2View";
+import { Timeline3View } from "@/components/templates/Timeline3View";
+import { Timeline4View } from "@/components/templates/Timeline4View";
+import { Timeline5View } from "@/components/templates/Timeline5View";
+import { CustomCodeView } from "@/components/templates/CustomCodeView";
 import { CurrencyProvider } from "@/hooks/useCurrencyConverter";
 import type { Community, CommunityView } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
@@ -77,8 +78,11 @@ export function CommunityViewSwitcher({
           {view === "timeline4" && (
             <Timeline4View community={community} stats={stats} listings={listings} statsError={statsError} ownedMints={ownedMints} />
           )}
-          {(view === "timeline5" || view === "custom_nocode" || view === "custom_code") && (
+          {(view === "timeline5" || view === "custom_nocode") && (
             <Timeline5View community={community} stats={stats} listings={listings} statsError={statsError} ownedMints={ownedMints} />
+          )}
+          {view === "custom_code" && (
+            <CustomCodeView community={community} />
           )}
         </div>
       )}

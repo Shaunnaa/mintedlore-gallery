@@ -1,9 +1,9 @@
 "use client";
 
-import { ListingGallery } from "@/components/ListingGallery";
-import { SpecialNftChecker } from "@/components/SpecialNftChecker";
-import { StatsCard } from "@/components/StatsCard";
-import { StoryTimeline } from "@/components/StoryTimeline";
+import { ListingGallery } from "@/components/market/ListingGallery";
+import { SpecialNftChecker } from "@/components/wallet/SpecialNftChecker";
+import { StatsCard } from "@/components/market/StatsCard";
+import { StoryTimeline } from "@/components/demos/StoryTimeline";
 import type { MagicEdenListing } from "@/services/magicEden";
 import { useState } from "react";
 
@@ -26,19 +26,19 @@ const viewOptions: {
   eyebrow: string;
   description: string;
 }[] = [
-  {
-    id: "collection",
-    label: "Collection",
-    eyebrow: "Market + Wallet",
-    description: "Stats, special access, active listings",
-  },
-  {
-    id: "story",
-    label: "Timeline",
-    eyebrow: "Story Mode",
-    description: "Collection history, utility, roadmap",
-  },
-];
+    {
+      id: "collection",
+      label: "Collection",
+      eyebrow: "Market + Wallet",
+      description: "Stats, special access, active listings",
+    },
+    {
+      id: "story",
+      label: "Timeline",
+      eyebrow: "Story Mode",
+      description: "Collection history, utility, roadmap",
+    },
+  ];
 
 export function CollectionStorySwitcher({
   listings,

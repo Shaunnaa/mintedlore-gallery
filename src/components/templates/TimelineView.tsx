@@ -5,7 +5,7 @@ import type { Community } from "@/lib/communities";
 import type { MagicEdenStats, MagicEdenListing } from "@/services/magicEden";
 import { useCurrencyConverter, type Currency } from "@/hooks/useCurrencyConverter";
 import Image from "next/image";
-import { OwnedBadge } from "@/components/OwnedBadge";
+import { OwnedBadge } from "@/components/wallet/OwnedBadge";
 
 type TimelineViewProps = {
   community: Community;

@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       .from("communities")
       .select("id")
       .eq("slug", slug)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json({ error: `Slug "${slug}" is already taken` }, { status: 409 });
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         description: description ?? "",
         collection_type: collectionType,
         collection_address: collectionAddress,
-        parent_community_id: parentCommunityId ?? null,
+        parent_community_id: parentCommunityId || null,
         preferred_view: preferredView ?? "timeline1",
         vip_threshold: vipThreshold ?? 1,
       })
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, community }, { status: 201 });
   } catch (err: unknown) {
     console.error("[/api/community/create]", err);
-    const message = err instanceof Error ? err.message : "Internal server error";
+    const message = err instanceof Error ? err.message : (err as any)?.message || JSON.stringify(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

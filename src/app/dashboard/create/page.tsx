@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -18,7 +18,7 @@ type NftPreview = {
 
 const VIEWS = ["timeline1", "timeline2", "timeline3", "timeline4", "timeline5", "gallery"];
 
-export default function CreateCommunityPage() {
+function CreateCommunityForm() {
   const { connected, publicKey } = useWallet();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -77,10 +77,14 @@ export default function CreateCommunityPage() {
     if (!collectionSymbol) return;
     setPreviewLoading(true);
     try {
-      const res = await fetch(`/api/listings?symbol=${collectionSymbol}&limit=1`);
+      const res = await fetch(`/api/stats?symbol=${collectionSymbol}`);
       const data = await res.json();
-      // Use the listings count as a proxy; ME stats would need a separate endpoint
-      setPreview({ floor: data.listings?.[0]?.priceLamports ? data.listings[0].priceLamports / 1e9 : 0, count: data.listings?.length ?? 0 });
+      
+      if (data.stats) {
+        setPreview({ floor: data.stats.floorPrice ? data.stats.floorPrice / 1e9 : 0, count: data.stats.listedCount ?? 0 });
+      } else {
+        setPreview(null);
+      }
     } catch {
       setPreview(null);
     } finally {
@@ -433,5 +437,13 @@ export default function CreateCommunityPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function CreateCommunityPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <CreateCommunityForm />
+    </Suspense>
   );
 }

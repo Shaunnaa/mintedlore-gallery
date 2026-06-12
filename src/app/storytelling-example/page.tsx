@@ -38,7 +38,7 @@ export default function StorytellingExample() {
             className="object-cover transition-transform duration-1000 hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent opacity-80" />
-          
+
           <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
             <div>
               <span className="inline-block rounded-full border border-emerald-500/30 bg-black/60 px-4 py-1.5 text-xs font-bold tracking-widest text-emerald-300 uppercase backdrop-blur-md">
@@ -95,7 +95,7 @@ export default function StorytellingExample() {
               glimpse of its hash. Entire DAOs waged economic wars to claim
               sovereignty over its metadata.
             </p>
-            
+
             <p>
               It is said that the current owner, a mysterious entity known only
               by their base58 address, keeps it locked within an offline vault,
@@ -105,18 +105,18 @@ export default function StorytellingExample() {
 
             {/* Token Gated Teaser */}
             <div className="my-12 flex flex-col items-center justify-center gap-4 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-10 text-center shadow-[0_0_40px_rgba(16,185,129,0.05)] relative overflow-hidden">
-               {/* Background pattern */}
-               <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay">
-                  <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="1" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
-                  </svg>
-               </div>
-               
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay">
+                <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+                </svg>
+              </div>
+
               <h3 className="relative z-10 text-2xl font-bold text-white">
                 Unlock the Final Chapter
               </h3>

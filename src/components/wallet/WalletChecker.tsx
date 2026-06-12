@@ -12,9 +12,11 @@ const WalletMultiButtonDynamic = dynamic(
 
 export function WalletChecker({
   collectionAddress,
+  communitySlug,
   vipThreshold,
 }: {
   collectionAddress: string;
+  communitySlug: string;
   vipThreshold: number;
 }) {
   const { publicKey, connected } = useWallet();
@@ -32,6 +34,7 @@ export function WalletChecker({
         body: JSON.stringify({
           walletAddress: publicKey.toBase58(),
           collectionAddress,
+          communitySlug,
         }),
       })
         .then((res) => res.json())
@@ -45,7 +48,7 @@ export function WalletChecker({
     } else {
       setCount(null);
     }
-  }, [connected, publicKey, collectionAddress]);
+  }, [connected, publicKey, collectionAddress, communitySlug]);
 
   if (!connected) {
     return (
@@ -74,7 +77,7 @@ export function WalletChecker({
     return (
       <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center shadow-2xl">
         <p className="text-stone-300">
-          You don't own any art from this collection yet.
+          You don&apos;t own any art from this collection yet.
         </p>
       </div>
     );

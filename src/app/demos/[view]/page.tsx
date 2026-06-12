@@ -1,72 +1,61 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CommunityViewSwitcher } from "@/components/templates/CommunityViewSwitcher";
 import { WalletChecker } from "@/components/wallet/WalletChecker";
 import { HolderBadge } from "@/components/wallet/HolderBadge";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { COMMUNITIES } from "@/lib/communities";
+import type { CommunityView } from "@/lib/communities";
 import {
   fetchActiveListings,
   fetchCollectionStats,
   LISTINGS_PAGE_SIZE,
 } from "@/services/magicEden";
 
-type GroupPageProps = {
+type DemoPageProps = {
   params: Promise<{
-    group_slug: string;
+    view: string;
   }>;
 };
 
-export const revalidate = 0; // Ensure fresh data
+// Must be one of these to be valid
+const VALID_VIEWS: CommunityView[] = [
+  "timeline1",
+  "timeline2",
+  "timeline3",
+  "timeline4",
+  "timeline5",
+  "gallery",
+  "custom_nocode",
+  "custom_code",
+];
 
-export default async function GroupPage({ params }: GroupPageProps) {
-  const { group_slug } = await params;
-  const supabase = getSupabase();
-  const { data: record } = await supabase.from("communities").select("*").eq("slug", group_slug).maybeSingle();
-  const community = record ? mapCommunityRecord(record) : undefined;
+export default async function DemoViewPage({ params }: DemoPageProps) {
+  const { view } = await params;
 
-  if (!community) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-5 text-stone-50">
-        <section className="max-w-xl border border-white/10 bg-white/[0.04] p-8 text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-300">
-            404
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold text-white">
-            Community Not Found
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-stone-400">
-            This community hub does not exist yet.
-          </p>
-          <Link
-            href="/"
-            className="mt-6 inline-flex h-11 items-center justify-center border border-emerald-300/50 bg-emerald-300 px-5 text-sm font-semibold text-neutral-950 transition hover:bg-white"
-          >
-            Back to Platform
-          </Link>
-        </section>
-      </main>
-    );
+  if (!VALID_VIEWS.includes(view as CommunityView)) {
+    notFound();
   }
 
+  // Use the first mock community but override its preferredView
+  const baseCommunity = COMMUNITIES[0];
+  const community = {
+    ...baseCommunity,
+    preferredView: view as CommunityView,
+  };
+
+  // Fetch real Magic Eden data for the demo!
   const [statsResult, listingsResult] = await Promise.all([
     fetchCollectionStats(community.collectionAddress),
     fetchActiveListings(0, LISTINGS_PAGE_SIZE, community.collectionAddress),
   ]);
 
-  let finalListings = listingsResult.data || [];
-
-  if (community.collectionType === "type_b") {
-    const { data: nfts } = await supabase
-      .from("community_nfts")
-      .select("mint_address")
-      .eq("community_id", community.id);
-
-    if (nfts && nfts.length > 0) {
-      const allowedMints = new Set(nfts.map(n => n.mint_address));
-      finalListings = finalListings.filter(l => allowedMints.has(l.tokenMint));
-    }
-  }
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50">
+      {/* Demo Banner */}
+      <div className="bg-emerald-500/10 px-4 py-2 text-center text-xs font-semibold tracking-widest text-emerald-400">
+        MOCK DEMO MODE — RENDERING {view.toUpperCase()}
+      </div>
+
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">
         <header className="border-b border-white/10 pb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -120,11 +109,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
           vipThreshold={community.vipThreshold ?? 1}
         />
 
+        {/* Render the specific timeline via the switcher */}
         <CommunityViewSwitcher
-          key={community.slug}
           community={community}
           stats={statsResult.data}
-          listings={finalListings}
+          listings={listingsResult.data || []}
           statsError={statsResult.error}
           listingsError={listingsResult.error}
         />

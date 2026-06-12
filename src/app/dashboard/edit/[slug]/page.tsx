@@ -134,6 +134,7 @@ export default function EditCommunityPage() {
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState(false);
   const [saved, setSaved]         = useState(false);
   const [error, setError]         = useState<string | null>(null);
 
@@ -226,6 +227,34 @@ export default function EditCommunityPage() {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!publicKey || !community) return;
+    if (!confirm("Are you absolutely sure you want to delete this community? This action cannot be undone.")) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      const res = await fetch(`/api/community/${slug}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ownerWallet: publicKey.toBase58(),
+        }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete community");
+      }
+      
+      window.location.href = "/dashboard";
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+      setDeleting(false);
     }
   };
 
@@ -392,9 +421,14 @@ export default function EditCommunityPage() {
         )}
 
         {/* Save footer */}
-        <div className="sticky bottom-4 mt-10 flex justify-end">
-          <button onClick={handleSave} disabled={saving || !connected}
-            className={`rounded-full px-6 py-3 text-sm font-bold uppercase tracking-widest shadow-2xl transition ${saved ? "border border-emerald-500 text-emerald-400" : "bg-violet-600 text-white hover:bg-violet-500"} disabled:opacity-40`}>
+        <div className="sticky bottom-4 mt-10 flex justify-between rounded-2xl border border-white/10 bg-[#07070e]/80 p-4 backdrop-blur-xl">
+          <button onClick={handleDelete} disabled={deleting || saving || !connected}
+            className="rounded-full border border-red-500/30 bg-red-500/10 px-6 py-3 text-sm font-bold uppercase tracking-widest text-red-400 shadow-xl transition hover:bg-red-500/20 disabled:opacity-40">
+            {deleting ? "Deleting..." : "Delete Community"}
+          </button>
+          
+          <button onClick={handleSave} disabled={saving || deleting || !connected}
+            className={`rounded-full px-8 py-3 text-sm font-bold uppercase tracking-widest shadow-2xl transition ${saved ? "border border-emerald-500 text-emerald-400" : "bg-violet-600 text-white hover:bg-violet-500"} disabled:opacity-40`}>
             {saving ? "Saving…" : saved ? "✓ Saved!" : "Save Changes"}
           </button>
         </div>

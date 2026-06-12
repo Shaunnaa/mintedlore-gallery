@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import type { Community } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
-import { OwnedBadge } from "@/components/OwnedBadge";
+import { OwnedBadge } from "@/components/wallet/OwnedBadge";
 import { useCurrencyConverter } from "@/hooks/useCurrencyConverter";
 
 const CHAPTER_LABELS = [
@@ -215,9 +215,9 @@ export function Timeline4View({
         {!statsError && stats && (
           <div className="mx-auto mt-10 flex max-w-lg flex-wrap items-center justify-center gap-6">
             {[
-              { label: "Floor", value: `${(stats.floorPrice / 1e9).toFixed(2)} SOL` },
-              { label: "Volume", value: `${(stats.volumeAll / 1e9).toFixed(0)} SOL` },
-              { label: "Listed", value: String(stats.listedCount) },
+              { label: "Floor", value: `${((stats?.floorPrice || 0) / 1e9).toFixed(2)} SOL` },
+              { label: "Volume", value: `${((stats?.volumeAll || 0) / 1e9).toFixed(0)} SOL` },
+              { label: "Listed", value: String(stats?.listedCount || 0) },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-xs uppercase tracking-widest text-stone-500">{label}</p>

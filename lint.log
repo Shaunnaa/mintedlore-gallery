@@ -1,0 +1,56 @@
+
+> group4-gallery@0.1.0 lint
+> eslint
+
+
+D:\Solana\group4-gallery\src\app\admin\page.tsx
+   11:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   29:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   37:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  253:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Solana\group4-gallery\src\app\api\community\[slug]\route.ts
+  81:12  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Solana\group4-gallery\src\app\api\community\create\route.ts
+  93:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Solana\group4-gallery\src\app\dashboard\create\page.tsx
+  19:7   warning  'VIEWS' is assigned a value but never used                             @typescript-eslint/no-unused-vars
+  43:20  warning  'setParentId' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+  94:7   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+D:\Solana\group4-gallery\src\app\dashboard\edit\[slug]\page.tsx
+  201:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Solana\group4-gallery\src\app\dashboard\page.tsx
+  6:10  warning  'WalletMultiButton' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Solana\group4-gallery\src\app\storytelling-example\page.tsx
+  87:15  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  89:38  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+D:\Solana\group4-gallery\src\components\CommunityViewSwitcher.tsx
+  10:26  warning  'CommunityView' is defined but never used                                                                    @typescript-eslint/no-unused-vars
+  59:6   warning  React Hook useEffect has a missing dependency: 'listings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Solana\group4-gallery\src\components\Timeline2View.tsx
+   8:3   warning  'stats' is defined but never used                                @typescript-eslint/no-unused-vars
+  82:13  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  84:28  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+D:\Solana\group4-gallery\src\components\Timeline3View.tsx
+  8:3  warning  'stats' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Solana\group4-gallery\src\components\Timeline5View.tsx
+    7:10  warning  'OwnedBadge' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   61:18  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   73:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  113:10  warning  'inRange' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  142:15  warning  'rect' is assigned a value but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  144:15  warning  'visibleScrollStart' is assigned a value but never used                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  311:46  warning  'i' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+
+✖ 27 problems (10 errors, 17 warnings)
+

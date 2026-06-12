@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SolanaWalletProvider } from "@/components/SolanaWalletProvider";
-import { Navbar } from "@/components/Navbar";
+import { SolanaWalletProvider } from "@/components/wallet/SolanaWalletProvider";
+import { Navbar } from "@/components/layout/Navbar";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
 

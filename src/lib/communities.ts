@@ -26,6 +26,7 @@ export type ThemeSettings = {
   };
   chapters?: { letter: string; title: string; color: string }[];
   customCss?: string;         // for custom_code mode
+  customHtml?: string;        // for completely custom UI rendering
 };
 
 export type Community = {
@@ -38,6 +39,8 @@ export type Community = {
   image: string;
   themeSettings?: ThemeSettings;
   vipThreshold?: number;
+  collectionType?: "type_a" | "type_b";
+  parentCommunityId?: number | null;
 };
 
 export const COMMUNITIES: Community[] = [

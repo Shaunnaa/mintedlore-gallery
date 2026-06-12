@@ -65,7 +65,7 @@ export async function POST(request: Request) {
           .from("communities")
           .select("id, collection_type")
           .eq("slug", communitySlug)
-          .single();
+          .maybeSingle();
 
         if (community?.collection_type === "type_b") {
           const { data: communityNfts } = await supabase

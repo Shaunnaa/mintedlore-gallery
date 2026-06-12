@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 
 export function HolderBadge({
   collectionAddress,
+  communitySlug,
   vipThreshold,
 }: {
   collectionAddress: string;
+  communitySlug: string;
   vipThreshold: number;
 }) {
   const { connected, publicKey } = useWallet();
@@ -21,6 +23,7 @@ export function HolderBadge({
         body: JSON.stringify({
           walletAddress: publicKey.toBase58(),
           collectionAddress,
+          communitySlug,
         }),
       })
         .then((res) => res.json())
@@ -33,7 +36,7 @@ export function HolderBadge({
     } else {
       setIsVIP(false);
     }
-  }, [connected, publicKey, collectionAddress, vipThreshold]);
+  }, [connected, publicKey, collectionAddress, communitySlug, vipThreshold]);
 
   if (!isVIP) return null;
 

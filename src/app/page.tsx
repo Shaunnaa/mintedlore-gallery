@@ -1,8 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { COMMUNITIES } from "@/lib/communities";
+import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
 
-export default function Home() {
+export const revalidate = 0; // Ensure fresh data
+
+export default async function Home() {
+  const supabase = getSupabase();
+  const { data: records } = await supabase.from("communities").select("*").order("created_at", { ascending: false });
+  const communities = (records || []).map(mapCommunityRecord);
+
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-5 py-8 sm:px-8 lg:px-10">
@@ -35,7 +41,7 @@ export default function Home() {
             <div className="border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/30">
               <p className="text-sm text-stone-400">Platform Index</p>
               <p className="mt-2 text-4xl font-semibold text-white">
-                {COMMUNITIES.length}
+                {communities.length}
               </p>
               <p className="mt-2 text-sm text-stone-400">
                 communities ready for gallery and timeline exploration
@@ -60,7 +66,7 @@ export default function Home() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {COMMUNITIES.map((community) => (
+            {communities.map((community) => (
               <Link
                 key={community.id}
                 href={`/${community.slug}`}

@@ -5,10 +5,11 @@ import { useCurrencyConverter, type Currency } from "@/hooks/useCurrencyConverte
 type StatsCardProps = {
   floorPrice?: number;
   totalVolume?: number;
+  listedCount?: number;
   error?: string | null;
 };
 
-export function StatsCard({ floorPrice, totalVolume, error }: StatsCardProps) {
+export function StatsCard({ floorPrice, totalVolume, listedCount, error }: StatsCardProps) {
   const { selectedCurrency, setSelectedCurrency, formatValue } = useCurrencyConverter();
 
   return (
@@ -45,7 +46,13 @@ export function StatsCard({ floorPrice, totalVolume, error }: StatsCardProps) {
             {error}
           </p>
         ) : (
-          <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2 mt-4 sm:mt-0">
+          <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-3 mt-4 sm:mt-0">
+            <div className="border border-white/10 bg-[#101014] px-6 py-4 flex flex-col justify-center">
+              <p className="text-sm text-stone-400">Listed Items</p>
+              <p className="mt-2 text-3xl font-semibold text-white transition-all duration-300">
+                {listedCount ? listedCount.toLocaleString() : "0"}
+              </p>
+            </div>
             <div className="border border-white/10 bg-[#101014] px-6 py-4 flex flex-col justify-center">
               <p className="text-sm text-stone-400">Floor Price</p>
               <p className="mt-2 text-3xl font-semibold text-white transition-all duration-300">

@@ -1,6 +1,6 @@
 "use client";
 
-import { ListingCard } from "@/components/ListingCard";
+import { ListingCard } from "@/components/market/ListingCard";
 import type { MagicEdenListing } from "@/services/magicEden";
 import { useEffect, useState } from "react";
 
@@ -58,13 +58,13 @@ export function ListingGallery({
       const data = contentType.includes("application/json")
         ? ((await response.json()) as ListingsResponse)
         : ({
-            error: await response.text(),
-          } satisfies ListingsResponse);
+          error: await response.text(),
+        } satisfies ListingsResponse);
 
       if (!response.ok || data.error) {
         setLoadError(
           data.error ??
-            `Unable to load more listings. Request failed with ${response.status}.`,
+          `Unable to load more listings. Request failed with ${response.status}.`,
         );
         return;
       }

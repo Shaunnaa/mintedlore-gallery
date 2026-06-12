@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { Community } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
-import { OwnedBadge } from "@/components/OwnedBadge";
+import { OwnedBadge } from "@/components/wallet/OwnedBadge";
 
 export function Timeline3View({
   community,

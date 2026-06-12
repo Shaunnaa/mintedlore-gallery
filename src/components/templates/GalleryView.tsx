@@ -1,5 +1,5 @@
-import { ListingGallery } from "@/components/ListingGallery";
-import { StatsCard } from "@/components/StatsCard";
+import { ListingGallery } from "@/components/market/ListingGallery";
+import { StatsCard } from "@/components/market/StatsCard";
 import type { Community } from "@/lib/communities";
 import type { MagicEdenListing, MagicEdenStats } from "@/services/magicEden";
 import { LISTINGS_PAGE_SIZE } from "@/services/magicEden";
@@ -26,6 +26,7 @@ export function GalleryView({
       <StatsCard
         floorPrice={stats?.floorPrice}
         totalVolume={stats?.volumeAll}
+        listedCount={stats?.listedCount}
         error={statsError}
       />
 
