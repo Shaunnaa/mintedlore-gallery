@@ -6,6 +6,7 @@ import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
 import {
   fetchActiveListings,
   fetchCollectionStats,
+  fetchTokensByMints,
   LISTINGS_PAGE_SIZE,
 } from "@/services/magicEden";
 
@@ -61,8 +62,12 @@ export default async function GroupPage({ params }: GroupPageProps) {
       .eq("community_id", community.id);
 
     if (nfts && nfts.length > 0) {
-      const allowedMints = new Set(nfts.map(n => n.mint_address));
-      finalListings = finalListings.filter(l => allowedMints.has(l.tokenMint));
+      const mints = nfts.map(n => n.mint_address);
+      // Fetch the specific tokens so we don't rely on the first 20 active listings page
+      const specificTokensResult = await fetchTokensByMints(mints);
+      finalListings = specificTokensResult.data || [];
+    } else {
+      finalListings = [];
     }
   }
   return (

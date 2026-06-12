@@ -25,6 +25,7 @@ function CreateCommunityForm() {
 
   const preselectedType  = (searchParams.get("type") === "b" ? "type_b" : null) as CollectionType | null;
   const preselectedParent = searchParams.get("parent");
+  const preselectedSymbol = searchParams.get("symbol");
 
   const [step, setStep]           = useState<Step>(1);
   const [collectionType, setCollectionType] = useState<CollectionType>(preselectedType ?? "type_a");
@@ -35,7 +36,7 @@ function CreateCommunityForm() {
   const [description, setDescription] = useState("");
 
   // Step 2 — Type A
-  const [collectionSymbol, setCollectionSymbol] = useState("");
+  const [collectionSymbol, setCollectionSymbol] = useState(preselectedSymbol ?? "");
   const [preview, setPreview]     = useState<{ floor: number; count: number } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -72,6 +73,13 @@ function CreateCommunityForm() {
       setNftsLoading(false);
     }
   }, []);
+
+  // Auto-load NFTs if preselected
+  useEffect(() => {
+    if (preselectedType === "type_b" && preselectedSymbol) {
+      loadParentNfts(preselectedSymbol);
+    }
+  }, [preselectedType, preselectedSymbol, loadParentNfts]);
 
   const previewCollection = async () => {
     if (!collectionSymbol) return;
@@ -278,24 +286,33 @@ function CreateCommunityForm() {
 
             {collectionType === "type_b" && (
               <>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Type A Collection Symbol</label>
-                  <div className="flex gap-2">
-                    <input
-                      className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
-                      placeholder="e.g. mad_lads"
-                      value={collectionSymbol}
-                      onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
-                    />
-                    <button
-                      onClick={() => loadParentNfts(collectionSymbol)}
-                      disabled={!collectionSymbol || nftsLoading}
-                      className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-40"
-                    >
-                      {nftsLoading ? "…" : "Load NFTs"}
-                    </button>
+                {!preselectedParent ? (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Type A Collection Symbol</label>
+                    <div className="flex gap-2">
+                      <input
+                        className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
+                        placeholder="e.g. mad_lads"
+                        value={collectionSymbol}
+                        onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
+                      />
+                      <button
+                        onClick={() => loadParentNfts(collectionSymbol)}
+                        disabled={!collectionSymbol || nftsLoading}
+                        className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-40"
+                      >
+                        {nftsLoading ? "…" : "Load NFTs"}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+                    <p className="text-xs font-semibold text-cyan-400">Parent Collection Auto-linked ✓</p>
+                    <p className="mt-1 text-sm text-stone-300">
+                      Loading NFTs from: <strong className="text-white">{collectionSymbol}</strong>
+                    </p>
+                  </div>
+                )}
 
                 {nfts.length > 0 && (
                   <div>

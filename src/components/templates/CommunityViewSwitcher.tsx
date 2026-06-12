@@ -60,11 +60,30 @@ export function CommunityViewSwitcher({
   }, [connected, publicKey, community.collectionAddress, community.slug]);
 
   const view = community.preferredView;
+  const [activeTab, setActiveTab] = useState<"story" | "gallery">(view === "gallery" ? "gallery" : "story");
 
   return (
     <CurrencyProvider>
-      {/* ── Primary view (timeline / custom) ─────────────────────────────── */}
       {view !== "gallery" && (
+        <div className="mb-8 flex justify-center">
+          <div className="inline-flex rounded-xl bg-[#0a0a0f] p-1.5 shadow-inner ring-1 ring-white/10">
+            <button
+              onClick={() => setActiveTab("story")}
+              className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold tracking-wide transition-all ${activeTab === "story" ? "bg-emerald-500/10 text-emerald-300 shadow-sm ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-white"}`}
+            >
+              📖 Story / Timeline
+            </button>
+            <button
+              onClick={() => setActiveTab("gallery")}
+              className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold tracking-wide transition-all ${activeTab === "gallery" ? "bg-emerald-500/10 text-emerald-300 shadow-sm ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-white"}`}
+            >
+              🖼️ Gallery
+            </button>
+          </div>
+        </div>
+      )}
+      {/* ── Primary view (timeline / custom) ─────────────────────────────── */}
+      {activeTab === "story" && view !== "gallery" && (
         <div className="mb-16">
           {view === "timeline1" && (
             <Timeline1View community={community} stats={stats} listings={listings} statsError={statsError} ownedMints={ownedMints} />
@@ -87,26 +106,19 @@ export function CommunityViewSwitcher({
         </div>
       )}
 
-      {/* ── Gallery — always shown on every page ─────────────────────────── */}
-      <div>
-        {view !== "gallery" && (
-          <div className="mb-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-white/5" />
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-600">
-              Full Collection Gallery
-            </p>
-            <div className="h-px flex-1 bg-white/5" />
-          </div>
-        )}
-        <GalleryView
-          community={community}
-          stats={stats}
-          listings={listings}
-          statsError={statsError}
-          listingsError={listingsError}
-          ownedMints={ownedMints}
-        />
-      </div>
+      {/* ── Gallery ─────────────────────────── */}
+      {activeTab === "gallery" && (
+        <div>
+          <GalleryView
+            community={community}
+            stats={stats}
+            listings={listings}
+            statsError={statsError}
+            listingsError={listingsError}
+            ownedMints={ownedMints}
+          />
+        </div>
+      )}
     </CurrencyProvider>
   );
 }

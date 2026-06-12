@@ -21,6 +21,8 @@ type ThemeSettings = {
   primaryColor: string;
   backgroundColor: string;
   story?: { title: string; scenes: StoryScene[] };
+  customHtml?: string;
+  customCss?: string;
 };
 
 type Community = {
@@ -139,13 +141,16 @@ export default function EditCommunityPage() {
   const [error, setError]         = useState<string | null>(null);
 
   // Edit mode tab
-  const [editMode, setEditMode]   = useState<"visual" | "code">("visual");
+  const [editMode, setEditMode]   = useState<"visual" | "html" | "code">("visual");
 
   // Visual editor state
   const [preferredView, setPreferredView] = useState("timeline5");
   const [primaryColor,  setPrimaryColor]  = useState("#34d399");
   const [storyTitle,    setStoryTitle]    = useState("");
   const [scenes, setScenes]               = useState<StoryScene[]>(DEFAULT_SCENES);
+
+  // HTML editor state
+  const [customHtml, setCustomHtml] = useState("");
 
   // Code editor state
   const [rawJson,   setRawJson]   = useState("");
@@ -165,6 +170,7 @@ export default function EditCommunityPage() {
           setPrimaryColor(ts.primaryColor ?? "#34d399");
           setStoryTitle(ts.story?.title ?? c.name);
           setScenes(ts.story?.scenes ?? DEFAULT_SCENES);
+          setCustomHtml(ts.customHtml ?? "");
           setRawJson(JSON.stringify(ts, null, 2));
         } else {
           setStoryTitle(c.name);
@@ -204,6 +210,13 @@ export default function EditCommunityPage() {
         setSaving(false);
         return;
       }
+    } else if (editMode === "html") {
+      themeSettings = {
+        primaryColor,
+        backgroundColor: "#050505",
+        ...(community.theme_settings as object || {}),
+        customHtml,
+      };
     } else {
       themeSettings = { primaryColor, backgroundColor: "#050505", story: { title: storyTitle, scenes } };
     }
@@ -405,14 +418,32 @@ export default function EditCommunityPage() {
           </div>
         )}
 
-        {/* ══ CODE EDITOR ══ */}
+        {/* ══ HTML EDITOR ══ */}
+        {editMode === "html" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
+              <p className="text-xs text-cyan-300">🌐 Write custom HTML. Make sure your Preferred View is set to "Custom (With Code)" to see this.</p>
+              <button
+                onClick={() => setCustomHtml(prev => prev + `\n<!-- Magic Eden Marketplace Embed -->\n<div style="width: 100%; height: 800px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin-top: 40px;">\n  <iframe \n    src="https://play.staratlas.com/market" \n    width="100%" \n    height="100%" \n    frameborder="0"\n    allow="fullscreen"\n  ></iframe>\n</div>\n`)}
+                className="rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/40"
+              >
+                + Insert Marketplace NFT Demo
+              </button>
+            </div>
+            <textarea rows={22} spellCheck={false} value={customHtml} onChange={e => setCustomHtml(e.target.value)}
+              placeholder="<div class='text-white'>Hello Web3!</div>"
+              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs leading-relaxed text-emerald-300 outline-none focus:border-cyan-500/50" />
+          </div>
+        )}
+
+        {/* ══ JSON EDITOR ══ */}
         {editMode === "code" && (
           <div className="space-y-4">
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-300">
               💻 Edit raw <code className="rounded bg-amber-900/30 px-1">theme_settings</code> JSON for full control. Invalid JSON will not save.
             </div>
             <textarea rows={22} spellCheck={false} value={rawJson} onChange={e => setRawJson(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-3 font-mono text-xs text-emerald-300 outline-none focus:border-amber-500/50" />
+              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs leading-relaxed text-emerald-300 outline-none focus:border-amber-500/50" />
             {jsonError && <p className="text-xs text-red-400">⚠ {jsonError}</p>}
             <p className="text-[10px] text-stone-600">
               Valid scene types: <code>space</code> · <code>village</code> · <code>launch</code> · <code>travel</code> · <code>arrival</code>

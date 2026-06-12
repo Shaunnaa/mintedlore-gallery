@@ -124,6 +124,39 @@ export async function fetchActiveListings(
   };
 }
 
+export async function fetchTokensByMints(
+  mints: string[]
+): Promise<ApiResult<MagicEdenListing[]>> {
+  try {
+    // Fetch all mints in parallel
+    const promises = mints.map(mint => fetchMagicEden<any>(`/tokens/${mint}`));
+    const results = await Promise.all(promises);
+
+    const data: MagicEdenListing[] = [];
+    
+    for (const res of results) {
+      if (!res.error && res.data) {
+        const token = res.data;
+        data.push({
+          tokenMint: token.mintAddress,
+          name: token.name ?? "Unnamed NFT",
+          image: token.image ?? null,
+          sellerAddress: token.owner ?? "Unknown seller",
+          sellerName: "Owner", // Token API doesn't return full seller profile unless listed
+          priceLamports: token.listPrice ?? 0, // 0 if not currently listed
+        });
+      }
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return { 
+      data: null, 
+      error: error instanceof Error ? error.message : "Failed to fetch specific tokens" 
+    };
+  }
+}
+
 function getSellerName(listing: MagicEdenListingResponse): string {
   return (
     listing.sellerDisplayName ??

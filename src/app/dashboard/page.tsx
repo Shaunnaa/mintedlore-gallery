@@ -153,7 +153,7 @@ export default function DashboardPage() {
                   <CommunityCard community={typeA}>
                     <div className="mt-4 border-t border-white/5 pt-4">
                       <Link
-                        href={`/dashboard/create?type=b&parent=${typeA.id}`}
+                        href={`/dashboard/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/30 py-2 text-xs font-semibold text-cyan-500 transition hover:border-cyan-400/60 hover:text-cyan-300"
                       >
                         + Add Type B Sub-Collection
