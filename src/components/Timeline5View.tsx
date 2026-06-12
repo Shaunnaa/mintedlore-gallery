@@ -86,39 +86,38 @@ function Rocket({ bottom, nftSrc }: { bottom: number; nftSrc?: string | null }) 
   );
 }
 
-// ─── Narrative text blocks per scene ────────────────────────────────────────
+type SceneType = "space" | "village" | "launch" | "travel" | "arrival";
 
-const SCENES = [
-  { id: 0, name: "The Void",       range: [0,    0.10], text: "Before time itself was recorded on-chain…" },
-  { id: 1, name: "The Awakening",  range: [0.10, 0.20], text: "Light tore through the dark. The genesis block fired." },
-  { id: 2, name: "The Signal",     range: [0.20, 0.30], text: "A mysterious signal emerged from the coordinates." },
-  { id: 3, name: "First Contact",  range: [0.30, 0.42], text: "The explorers approached the alien system cautiously." },
-  { id: 4, name: "The Village",    range: [0.42, 0.54], text: "A civilization of NFT holders thrived on the surface." },
-  { id: 5, name: "The Oracle",     range: [0.54, 0.64], text: "The ancient tower held the collection's deepest lore." },
-  { id: 6, name: "The Market",     range: [0.64, 0.74], text: "Traders gathered beneath the neon-lit exchange arches." },
-  { id: 7, name: "Ignition",       range: [0.74, 0.84], text: "Countdown began. One brave holder would carry the mission." },
-  { id: 8, name: "The Voyage",     range: [0.84, 0.92], text: "Through asteroid fields and nebula clouds they journeyed." },
-  { id: 9, name: "New World",      range: [0.92, 1.00], text: "A new planet. A new chapter. The collection had arrived." },
+type Scene = {
+  id: number;
+  name: string;
+  text: string;
+  color: string;
+  type: SceneType;
+  range: [number, number];
+};
+
+const DEFAULT_RAW_SCENES = [
+  { id: 0, name: "The Void",       text: "Before time itself was recorded on-chain…", color: "#3b0764", type: "space" as const },
+  { id: 1, name: "The Awakening",  text: "Light tore through the dark. The genesis block fired.", color: "#1e1b4b", type: "space" as const },
+  { id: 2, name: "The Signal",     text: "A mysterious signal emerged from the coordinates.", color: "#4c1d95", type: "space" as const },
+  { id: 3, name: "First Contact",  text: "The explorers approached the alien system cautiously.", color: "#6b21a8", type: "space" as const },
+  { id: 4, name: "The Village",    text: "A civilization of NFT holders thrived on the surface.", color: "#6d28d9", type: "village" as const },
+  { id: 5, name: "The Oracle",     text: "The ancient tower held the collection's deepest lore.", color: "#5b21b6", type: "village" as const },
+  { id: 6, name: "The Market",     text: "Traders gathered beneath the neon-lit exchange arches.", color: "#4c1d95", type: "village" as const },
+  { id: 7, name: "Ignition",       text: "Countdown began. One brave holder would carry the mission.", color: "#0c1a2e", type: "launch" as const },
+  { id: 8, name: "The Voyage",     text: "Through asteroid fields and nebula clouds they journeyed.", color: "#1e293b", type: "travel" as const },
+  { id: 9, name: "New World",      text: "A new planet. A new chapter. The collection had arrived.", color: "#052e16", type: "arrival" as const },
 ];
 
-function activeScene(p: number) {
-  return SCENES.find(s => p >= s.range[0] && p <= s.range[1]) ?? SCENES[SCENES.length - 1];
-}
-
 function inRange(p: number, lo: number, hi: number) { return p >= lo && p <= hi; }
-
-// Fade in/out at edges, hold full opacity in the middle 60% of each scene
-function fade(p: number, lo: number, peak: number, hi: number) {
-  if (p < lo || p > hi) return 0;
-  if (p <= peak) return (p - lo) / (peak - lo);
-  return 1 - (p - peak) / (hi - peak);
-}
 
 // Holds at 1.0 for the middle portion, fades in/out at edges only
 function sceneFade(p: number, lo: number, hi: number, edgeFraction = 0.18) {
   if (p < lo || p > hi) return 0;
   const range = hi - lo;
   const fadeW = range * edgeFraction;
+  if (fadeW === 0) return 1;
   if (p < lo + fadeW) return (p - lo) / fadeW;
   if (p > hi - fadeW) return (hi - p) / fadeW;
   return 1;
@@ -155,8 +154,42 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
     };
   }, []);
 
+  const rawScenes = community.themeSettings?.story?.scenes?.length
+    ? community.themeSettings.story.scenes
+    : DEFAULT_RAW_SCENES;
+
+  const SCENES: Scene[] = rawScenes.map((s, i) => ({
+    ...s,
+    range: [i / rawScenes.length, (i + 1) / rawScenes.length],
+  }));
+
+  const activeScene = SCENES.find(s => p >= s.range[0] && p <= s.range[1]) ?? SCENES[SCENES.length - 1];
+
+  // Helper to compute opacity for a specific scene type
+  const getOpacity = (type: SceneType, edgeFraction = 0.18) => {
+    const ranges: [number, number][] = [];
+    let current: [number, number] | null = null;
+    for (const s of SCENES) {
+      if (s.type === type) {
+        if (!current) {
+          current = [...s.range];
+        } else if (Math.abs(current[1] - s.range[0]) < 0.001) {
+          current[1] = s.range[1];
+        } else {
+          ranges.push(current);
+          current = [...s.range];
+        }
+      } else if (current) {
+        ranges.push(current);
+        current = null;
+      }
+    }
+    if (current) ranges.push(current);
+
+    return Math.min(1, ranges.reduce((acc, r) => acc + sceneFade(p, r[0], r[1], edgeFraction), 0));
+  };
+
   const nft = (i: number) => listings[i] ?? null;
-  const scene = activeScene(p);
 
   // Derived parallax values
   const planetSize   = 80  + p * 480;
@@ -177,54 +210,25 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
           background: `radial-gradient(ellipse at 15% 40%, ${nebulaColor1} 0%, transparent 55%), radial-gradient(ellipse at 85% 70%, ${p > 0.6 ? "#16325588" : "#1e1b4b88"} 0%, transparent 50%)`,
         }} />
 
-        {/* Surface horizon glow (scene 4-6) — no transition */}
+        {/* Surface horizon glow (village) */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48" style={{
           background: "linear-gradient(to top, #2e1065aa, transparent)",
-          opacity: sceneFade(p, 0.38, 0.68),
+          opacity: getOpacity("village"),
         }} />
 
-        {/* Green world glow (scene 9-10) — no transition */}
+        {/* Green world glow (arrival) */}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64" style={{
           background: "linear-gradient(to top, #14532daa, transparent)",
-          opacity: sceneFade(p, 0.88, 1.0, 0.15),
+          opacity: getOpacity("arrival", 0.15),
         }} />
 
-        {/* ── Main planet — no transition ── */}
+        {/* ── Main planet ── */}
         <div className="absolute inset-0" style={{ transform: `translateY(${(p - 0.4) * -60}px)` }}>
-          <GlowPlanet color={p > 0.85 ? "#16a34a" : "#7c3aed"} size={planetSize} cx={50} cy={planetY} rings={p < 0.65} />
+          <GlowPlanet color={activeScene.color} size={planetSize} cx={50} cy={planetY} rings={p < 0.65} />
         </div>
 
-        {/* ── Distant small planet — no transition ── */}
-        <div className="absolute inset-0" style={{ opacity: sceneFade(p, 0.08, 0.38) }}>
-          <GlowPlanet color="#0ea5e9" size={90} cx={75} cy={25} />
-        </div>
-
-        {/* ── Sun rising — no transition ── */}
-        <div className="absolute" style={{
-          width: 160, height: 160,
-          bottom: `${-80 + sceneFade(p, 0.10, 0.44) * 60}px`,
-          right: "8%",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, #fde68a, #f59e0b, transparent 70%)",
-          opacity: sceneFade(p, 0.10, 0.44),
-          boxShadow: "0 0 80px 30px rgba(251,191,36,0.3)",
-        }} />
-
-        {/* ── Hologram NFT signal — no transition ── */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ opacity: sceneFade(p, 0.20, 0.33) }}>
-          <div className="flex flex-col items-center gap-3">
-            <p className="font-mono text-xs tracking-widest text-cyan-400 animate-pulse">INCOMING TRANSMISSION</p>
-            {nft(0) && (
-              <div className="overflow-hidden rounded-xl border-2 border-cyan-400" style={{ width: 140, height: 140, boxShadow: "0 0 40px rgba(34,211,238,0.5)" }}>
-                <img src={nft(0)!.image!} alt="" className="h-full w-full object-cover opacity-80" />
-              </div>
-            )}
-            <p className="font-mono text-[10px] text-cyan-300 opacity-70">{nft(0)?.tokenMint.slice(0, 16)}...</p>
-          </div>
-        </div>
-
-        {/* ── Village ground & houses — no transition ── */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: sceneFade(p, 0.40, 0.57), transform: `translateY(${sceneFade(p, 0.40, 0.57) < 0.05 ? 40 : 0}px)` }}>
+        {/* ── Village ground & houses ── */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: getOpacity("village"), transform: `translateY(${getOpacity("village") < 0.05 ? 40 : 0}px)` }}>
           <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: "linear-gradient(to top, #1a0a3b, transparent)" }} />
           {([
             { x: 60,  y: 60,  c: "#a78bfa", ni: 1 },
@@ -240,54 +244,29 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
           ))}
         </div>
 
-        {/* ── Oracle tower — no transition ── */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center" style={{ opacity: sceneFade(p, 0.52, 0.67) }}>
-          <div className="overflow-hidden rounded-t-full border-2 border-violet-400 mb-1" style={{ width: 80, height: 80, boxShadow: "0 0 30px rgba(167,139,250,0.6)" }}>
-            {nft(0) && <img src={nft(0)!.image!} alt="" className="h-full w-full object-cover" />}
-          </div>
-          <div style={{ width: 16, height: 120, background: "linear-gradient(to bottom, #7c3aed, #1e1b4b)", boxShadow: "0 0 20px rgba(124,58,237,0.4)" }} />
-          <div style={{ width: 80, height: 8, background: "#7c3aed44", borderRadius: 4 }} />
-          <p className="mt-3 font-mono text-[10px] tracking-widest text-violet-400">THE ORACLE</p>
-        </div>
-
-        {/* ── Market stalls — no transition ── */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: sceneFade(p, 0.62, 0.76) }}>
-          <div className="absolute bottom-0 left-0 right-0 h-28" style={{ background: "linear-gradient(to top, #0f172a, transparent)" }} />
-          <div className="flex justify-around items-end pb-4 px-8">
-            {listings.slice(1, 6).map((l, i) => (
-              <div key={l.tokenMint} className="flex flex-col items-center gap-1">
-                <div className="overflow-hidden rounded-lg border" style={{ width: 64, height: 64, borderColor: "#60a5fa55", boxShadow: "0 0 12px rgba(96,165,250,0.3)" }}>
-                  {l.image && <img src={l.image} alt="" className="h-full w-full object-cover" />}
-                </div>
-                <div className="text-[8px] font-mono text-blue-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Launchpad + rocket on pad — no transition ── */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: sceneFade(p, 0.72, 0.86) }}>
+        {/* ── Launchpad + rocket on pad ── */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ opacity: getOpacity("launch") }}>
           <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: "linear-gradient(to top, #0c1a2e, transparent)" }} />
           <div className="absolute bottom-16 left-1/2 -translate-x-1/2 h-3 w-48 rounded" style={{ background: "#334155", boxShadow: "0 0 20px rgba(34,211,238,0.4)" }} />
           <div className="absolute bottom-18 left-1/3 -translate-x-1/2 h-20 w-1 rounded-full" style={{ background: "linear-gradient(to top, #f97316, transparent)" }} />
           <div className="absolute bottom-18 left-2/3 -translate-x-1/2 h-20 w-1 rounded-full" style={{ background: "linear-gradient(to top, #f97316, transparent)" }} />
-          {p < 0.83 && <Rocket bottom={64} nftSrc={nft(1)?.image} />}
+          <Rocket bottom={64} nftSrc={nft(1)?.image} />
         </div>
 
-        {/* ── Flying rocket (scene 8) ── */}
-        {inRange(p, 0.83, 0.93) && <Rocket bottom={rocketBottom} nftSrc={nft(1)?.image} />}
+        {/* ── Flying rocket (travel) ── */}
+        {getOpacity("travel") > 0 && <Rocket bottom={rocketBottom} nftSrc={nft(1)?.image} />}
 
-        {/* ── Asteroids — no transition ── */}
-        <div className="absolute inset-0" style={{ opacity: sceneFade(p, 0.82, 0.94) }}>
-          {[{x:15,y:20,s:32,a:25},{x:80,y:35,s:20,a:-15},{x:30,y:60,s:44,a:40},{x:70,y:70,s:26,a:-30},{x:50,y:15,s:18,a:60},{x:88,y:55,s:36,a:10}].map((ast,i)=>(
+        {/* ── Asteroids (travel) ── */}
+        <div className="absolute inset-0" style={{ opacity: getOpacity("travel") }}>
+          {[{x:15,y:20,s:32,a:25},{x:80,y:35,s:20,a:-15},{x:30,y:60,s:44,a:40},{x:70,y:70,s:26,a:-30},{x:50,y:15,s:18,a:60},{x:88,y:55,s:36,a:10}].map((ast,i)=>
             <Asteroid key={i} x={ast.x} y={ast.y} size={ast.s} angle={ast.a} />
-          ))}
+          )}
         </div>
 
-        {/* ── FINAL ENDING SCREEN — no transition ── */}
+        {/* ── FINAL ENDING SCREEN (arrival) ── */}
         <div
           className="absolute inset-0 overflow-hidden"
-          style={{ opacity: sceneFade(p, 0.90, 1.0, 0.10) }}
+          style={{ opacity: getOpacity("arrival", 0.10), pointerEvents: activeScene.type === "arrival" ? "auto" : "none" }}
         >
           {/* Dark overlay with scanlines for cinematic feel */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, #030310ee, #061a0fcc)" }} />
@@ -377,10 +356,10 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
           </div>
         </div>
 
-        {/* ── Narrative overlay text — no transition ── */}
-        <div className="pointer-events-none absolute left-6 top-8 max-w-xs" style={{ opacity: p > 0.85 ? 0 : 1 }}>
-          <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-stone-600">{scene.name}</p>
-          <p className="mt-1 text-sm font-light italic text-stone-400">{scene.text}</p>
+        {/* ── Narrative overlay text ── */}
+        <div className="pointer-events-none absolute left-6 top-8 max-w-xs" style={{ opacity: activeScene.type === "arrival" ? 0 : 1 }}>
+          <p className="text-[9px] font-bold uppercase tracking-[0.3em]" style={{ color: activeScene.color }}>{activeScene.name}</p>
+          <p className="mt-1 text-sm font-light italic text-stone-300">{activeScene.text}</p>
         </div>
 
         {/* ── Progress scrollbar (right side) ── */}

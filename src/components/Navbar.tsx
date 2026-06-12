@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 // Dynamically import WalletMultiButton to prevent hydration errors during SSR
 const WalletMultiButtonDynamic = dynamic(
@@ -11,6 +12,8 @@ const WalletMultiButtonDynamic = dynamic(
 );
 
 export function Navbar() {
+  const { connected } = useWallet();
+
   return (
     <nav className="sticky top-0 z-50 flex h-20 w-full items-center justify-between border-b border-white/10 bg-[#121216]/80 px-5 backdrop-blur-md sm:px-8 lg:px-10">
       <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
@@ -25,8 +28,22 @@ export function Navbar() {
         </span>
       </Link>
 
-      <div className="flex items-center">
-        {/* The standard MultiButton automatically handles Phantom & Solflare, and displays the app icon and wallet ID */}
+      <div className="flex items-center gap-4">
+        {/* Owner Dashboard — only visible when wallet is connected */}
+        {connected && (
+          <Link
+            href="/dashboard"
+            className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 transition hover:border-white/20 hover:text-white sm:flex"
+          >
+            {/* Grid icon */}
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            My Communities
+          </Link>
+        )}
+
+        {/* Wallet connect button */}
         <WalletMultiButtonDynamic className="!h-11 !rounded-full !border !border-emerald-400/20 !bg-emerald-400/10 !px-6 !text-sm !font-semibold !text-emerald-300 transition-all hover:!bg-emerald-400 hover:!text-neutral-950" />
       </div>
     </nav>

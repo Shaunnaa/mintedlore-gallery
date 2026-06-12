@@ -1,9 +1,31 @@
-export type CommunityView = "timeline1" | "timeline2" | "timeline3" | "timeline4" | "timeline5" | "gallery";
+export type CommunityView =
+  | "timeline1"
+  | "timeline2"
+  | "timeline3"
+  | "timeline4"
+  | "timeline5"
+  | "gallery"
+  | "custom_nocode"   // Visual editor — configured via /dashboard/edit
+  | "custom_code";    // Code editor — owner writes raw theme_settings JSON
+
+export type StoryScene = {
+  id: number;
+  name: string;
+  text: string;
+  color: string;
+  type: "space" | "village" | "launch" | "travel" | "arrival";
+};
 
 export type ThemeSettings = {
   primaryColor: string;
   backgroundColor: string;
   borderStyle: string;
+  story?: {
+    title: string;
+    scenes: StoryScene[];
+  };
+  chapters?: { letter: string; title: string; color: string }[];
+  customCss?: string;         // for custom_code mode
 };
 
 export type Community = {
