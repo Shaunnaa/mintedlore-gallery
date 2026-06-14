@@ -23,12 +23,15 @@ type ThemeSettings = {
   story?: { title: string; scenes: StoryScene[] };
   customHtml?: string;
   customCss?: string;
+  nftStories?: { assetId: string; html: string }[];
+  selectedAssetIds?: string[];
 };
 
 type Community = {
   id: number;
   name: string;
   slug: string;
+  collection_address: string;
   preferred_view: string;
   description: string;
   theme_settings: ThemeSettings | null;
@@ -151,6 +154,12 @@ export default function EditCommunityPage() {
 
   // HTML editor state
   const [customHtml, setCustomHtml] = useState("");
+  const [nftStories, setNftStories] = useState<{ name: string; assetId?: string; assetIds?: string[]; html: string }[]>(
+    (community?.theme_settings?.nftStories as unknown as { name: string; assetId?: string; assetIds?: string[]; html: string }[]) || []
+  );
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [gameAssets, setGameAssets] = useState<{ _id: string; name: string; image: string }[]>([]);
 
   // Code editor state
   const [rawJson,   setRawJson]   = useState("");
@@ -171,11 +180,23 @@ export default function EditCommunityPage() {
           setStoryTitle(ts.story?.title ?? c.name);
           setScenes(ts.story?.scenes ?? DEFAULT_SCENES);
           setCustomHtml(ts.customHtml ?? "");
+          setNftStories((ts.nftStories as any) ?? []);
+          setSelectedAssetIds(ts.selectedAssetIds ?? []);
           setRawJson(JSON.stringify(ts, null, 2));
         } else {
           setStoryTitle(c.name);
           setRawJson(JSON.stringify({ primaryColor: "#34d399", backgroundColor: "#050505", story: { title: c.name, scenes: DEFAULT_SCENES } }, null, 2));
         }
+        if (c.collection_address === "star_atlas") {
+          fetch("https://galaxy.staratlas.com/nfts")
+            .then(res => res.json())
+            .then((items: any[]) => {
+              const sorted = items.sort((a, b) => a.name.localeCompare(b.name));
+              setGameAssets(sorted);
+            })
+            .catch(console.error);
+        }
+
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -210,12 +231,14 @@ export default function EditCommunityPage() {
         setSaving(false);
         return;
       }
-    } else if (editMode === "html") {
+    } else if (editMode === "html" || isGame) {
       themeSettings = {
         primaryColor,
         backgroundColor: "#050505",
         ...(community.theme_settings as object || {}),
         customHtml,
+        nftStories: nftStories as any,
+        selectedAssetIds,
       };
     } else {
       themeSettings = { primaryColor, backgroundColor: "#050505", story: { title: storyTitle, scenes } };
@@ -287,6 +310,7 @@ export default function EditCommunityPage() {
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const isGame = community.collection_address === "star_atlas";
 
   return (
     <main className="min-h-screen bg-[#07070e] text-stone-50">
@@ -314,20 +338,23 @@ export default function EditCommunityPage() {
         {error && <div className="mb-6 rounded-lg border border-red-500/30 bg-red-950/20 px-4 py-3 text-sm text-red-300">{error}</div>}
 
         {/* Mode tabs — No Code / Code Editor */}
-        <div className="mb-8 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-          {([
-            { id: "visual", icon: "✨", label: "No Code Editor" },
-            { id: "code",   icon: "💻", label: "Code Editor" },
-          ] as { id: "visual" | "code"; icon: string; label: string }[]).map(tab => (
-            <button key={tab.id} onClick={() => setEditMode(tab.id)}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold uppercase tracking-widest transition ${editMode === tab.id ? "bg-violet-600 text-white" : "text-stone-500 hover:text-stone-300"}`}>
-              <span>{tab.icon}</span> {tab.label}
-            </button>
-          ))}
-        </div>
+        {!isGame && (
+          <div className="mb-8 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+            {([
+              { id: "visual", icon: "✨", label: "No Code Editor" },
+              { id: "html",   icon: "🌐", label: "HTML Editor" },
+              { id: "code",   icon: "💻", label: "Code Editor" },
+            ] as { id: "visual" | "html" | "code"; icon: string; label: string }[]).map(tab => (
+              <button key={tab.id} onClick={() => setEditMode(tab.id)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold uppercase tracking-widest transition ${editMode === tab.id ? "bg-violet-600 text-white" : "text-stone-500 hover:text-stone-300"}`}>
+                <span>{tab.icon}</span> {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ══ NO CODE EDITOR ══ */}
-        {editMode === "visual" && (
+        {!isGame && editMode === "visual" && (
           <div className="space-y-8">
 
             {/* Page Content — name (read-only) + description (editable) */}
@@ -419,25 +446,217 @@ export default function EditCommunityPage() {
         )}
 
         {/* ══ HTML EDITOR ══ */}
-        {editMode === "html" && (
+        {(editMode === "html" || isGame) && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
-              <p className="text-xs text-cyan-300">🌐 Write custom HTML. Make sure your Preferred View is set to "Custom (With Code)" to see this.</p>
-              <button
-                onClick={() => setCustomHtml(prev => prev + `\n<!-- Magic Eden Marketplace Embed -->\n<div style="width: 100%; height: 800px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin-top: 40px;">\n  <iframe \n    src="https://play.staratlas.com/market" \n    width="100%" \n    height="100%" \n    frameborder="0"\n    allow="fullscreen"\n  ></iframe>\n</div>\n`)}
-                className="rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/40"
-              >
-                + Insert Marketplace NFT Demo
-              </button>
-            </div>
-            <textarea rows={22} spellCheck={false} value={customHtml} onChange={e => setCustomHtml(e.target.value)}
-              placeholder="<div class='text-white'>Hello Web3!</div>"
-              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs leading-relaxed text-emerald-300 outline-none focus:border-cyan-500/50" />
+            {isGame && (
+              <div className="mb-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-500">NFT Stories (Code)</h2>
+                  <button 
+                    onClick={() => {
+                      setNftStories(prev => [...prev, { name: "New Story", assetIds: [""], html: "" }]);
+                      setActiveStoryIndex(nftStories.length);
+                    }}
+                    className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/10"
+                  >
+                    + Add Story
+                  </button>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {nftStories.map((story, i) => {
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setActiveStoryIndex(i)}
+                        className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${activeStoryIndex === i ? "bg-emerald-500 text-neutral-950" : "border border-white/10 text-stone-400 hover:border-white/30"}`}
+                      >
+                        {story.name || `Story ${i+1}`}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {activeStoryIndex !== null && nftStories[activeStoryIndex] && (
+                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Story Name</label>
+                      <button 
+                        onClick={() => {
+                          const confirmDelete = window.confirm("Delete this story?");
+                          if (confirmDelete) {
+                            setNftStories(prev => prev.filter((_, idx) => idx !== activeStoryIndex));
+                            setActiveStoryIndex(null);
+                          }
+                        }}
+                        className="text-[10px] font-bold text-red-400 hover:text-red-300"
+                      >
+                        Delete Story
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={nftStories[activeStoryIndex].name}
+                      onChange={(e) => {
+                        const newStories = [...nftStories];
+                        newStories[activeStoryIndex].name = e.target.value;
+                        setNftStories(newStories);
+                      }}
+                      placeholder="e.g., Armstrong Forever"
+                      className="w-full rounded-lg border border-white/5 bg-black/40 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50"
+                    />
+                    <label className="mt-4 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Target Game Assets</label>
+                    <div className="space-y-2 mt-2">
+                      {(() => {
+                        const story = nftStories[activeStoryIndex];
+                        // Migrate old single assetId to array if needed
+                        const currentAssets = story.assetIds || (story.assetId ? [story.assetId] : [""]);
+                        
+                        return currentAssets.map((assetId, assetIdx) => (
+                          <div key={assetIdx} className="flex items-center gap-2">
+                            <select
+                              className="flex-1 rounded-lg border border-white/5 bg-black/40 px-4 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
+                              value={assetId || ""}
+                              onChange={e => {
+                                const newId = e.target.value;
+                                setNftStories(prev => prev.map((s, idx) => {
+                                  if (idx !== activeStoryIndex) return s;
+                                  const newAssets = [...(s.assetIds || (s.assetId ? [s.assetId] : [""]))];
+                                  newAssets[assetIdx] = newId;
+                                  return { ...s, assetIds: newAssets };
+                                }));
+                              }}
+                            >
+                              <option value="" disabled>Select Asset #{assetIdx + 1}...</option>
+                              {gameAssets.map(asset => (
+                                <option key={asset._id} value={asset._id}>{asset.name}</option>
+                              ))}
+                            </select>
+                            {currentAssets.length > 1 && (
+                              <button 
+                                onClick={() => {
+                                  setNftStories(prev => prev.map((s, idx) => {
+                                    if (idx !== activeStoryIndex) return s;
+                                    const newAssets = [...(s.assetIds || [])];
+                                    newAssets.splice(assetIdx, 1);
+                                    return { ...s, assetIds: newAssets };
+                                  }));
+                                }}
+                                className="p-2 text-stone-500 hover:text-red-400"
+                                title="Remove Asset"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ));
+                      })()}
+                      <button
+                        onClick={() => {
+                          setNftStories(prev => prev.map((s, idx) => {
+                            if (idx !== activeStoryIndex) return s;
+                            const newAssets = [...(s.assetIds || (s.assetId ? [s.assetId] : [""])), ""];
+                            return { ...s, assetIds: newAssets };
+                          }));
+                        }}
+                        className="mt-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500 hover:text-emerald-400"
+                      >
+                        + Add Another Asset
+                      </button>
+                    </div>
+                    
+                    <label className="mt-4 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Story HTML Code</label>
+                    <textarea 
+                      rows={12} 
+                      spellCheck={false} 
+                      value={nftStories[activeStoryIndex].html} 
+                      onChange={e => {
+                        const newHtml = e.target.value;
+                        setNftStories(prev => prev.map((s, idx) => idx === activeStoryIndex ? { ...s, html: newHtml } : s));
+                      }}
+                      className="w-full rounded-lg border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs text-emerald-300 outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
+                )}
+
+                {/* Asset Selection */}
+                <div className="mt-10 border-t border-white/10 pt-8">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-500">Display Assets</h2>
+                      <p className="mt-1 text-[10px] text-stone-500">Select specific game assets to display. If none are selected, all assets will be shown.</p>
+                    </div>
+                    {selectedAssetIds.length > 0 && (
+                      <button 
+                        onClick={() => setSelectedAssetIds([])}
+                        className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-white"
+                      >
+                        Clear Selection ({selectedAssetIds.length})
+                      </button>
+                    )}
+                  </div>
+                  
+                  {gameAssets.length > 0 ? (
+                    <div className="grid max-h-96 grid-cols-2 gap-3 overflow-y-auto rounded-xl border border-white/10 bg-black/40 p-3 sm:grid-cols-3 md:grid-cols-4">
+                      {gameAssets.map(asset => {
+                        const isSelected = selectedAssetIds.includes(asset._id);
+                        return (
+                          <button
+                            key={asset._id}
+                            onClick={() => {
+                              setSelectedAssetIds(prev => 
+                                isSelected ? prev.filter(id => id !== asset._id) : [...prev, asset._id]
+                              );
+                            }}
+                            className={`group relative overflow-hidden rounded-lg border-2 text-left transition ${isSelected ? "border-cyan-500 bg-cyan-500/10" : "border-white/5 bg-white/5 hover:border-white/20"}`}
+                          >
+                            <div className="aspect-square w-full bg-black/50">
+                              <img src={asset.image} alt={asset.name} className="h-full w-full object-cover" />
+                            </div>
+                            <div className="p-2">
+                              <p className="truncate text-[10px] font-bold text-white">{asset.name}</p>
+                            </div>
+                            {isSelected && (
+                              <div className="absolute right-1 top-1 rounded-full bg-cyan-500 p-0.5 text-neutral-950">
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex h-32 items-center justify-center rounded-xl border border-white/5 bg-black/20">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!isGame && (
+              <>
+                <div className="flex items-center justify-between rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
+                  <p className="text-xs text-cyan-300">🌐 Write custom HTML. Make sure your Preferred View is set to "Custom (With Code)" to see this.</p>
+                  <button
+                    onClick={() => setCustomHtml(prev => prev + `\n<!-- Magic Eden Marketplace Embed -->\n<div style="width: 100%; height: 800px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin-top: 40px;">\n  <iframe \n    src="https://play.staratlas.com/market" \n    width="100%" \n    height="100%" \n    frameborder="0"\n    allow="fullscreen"\n  ></iframe>\n</div>\n`)}
+                    className="rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/40"
+                  >
+                    + Insert Marketplace NFT Demo
+                  </button>
+                </div>
+                <textarea rows={22} spellCheck={false} value={customHtml} onChange={e => setCustomHtml(e.target.value)}
+                  placeholder="<div class='text-white'>Hello Web3!</div>"
+                  className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs leading-relaxed text-emerald-300 outline-none focus:border-cyan-500/50" />
+              </>
+            )}
           </div>
         )}
 
         {/* ══ JSON EDITOR ══ */}
-        {editMode === "code" && (
+        {!isGame && editMode === "code" && (
           <div className="space-y-4">
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-300">
               💻 Edit raw <code className="rounded bg-amber-900/30 px-1">theme_settings</code> JSON for full control. Invalid JSON will not save.

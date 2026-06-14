@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         name,
         slug,
         description: description ?? "",
-        collection_type: collectionType,
+        collection_type: collectionType === "type_game" ? "type_a" : collectionType,
         collection_address: collectionAddress,
         parent_community_id: parentCommunityId || null,
         preferred_view: preferredView ?? "timeline1",

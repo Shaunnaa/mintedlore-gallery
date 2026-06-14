@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 type Step = 1 | 2 | 3;
-type CollectionType = "type_a" | "type_b";
+type CollectionType = "type_a" | "type_b" | "type_game";
 
 type NftPreview = {
   tokenMint: string;
@@ -109,9 +109,10 @@ function CreateCommunityForm() {
   };
 
   const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
-  const canProceedStep2 = collectionType === "type_a"
-    ? collectionSymbol.trim().length > 0
-    : collectionSymbol.trim().length > 0 && selectedMints.size > 0;
+  const canProceedStep2 = 
+    collectionType === "type_a" ? collectionSymbol.trim().length > 0 :
+    collectionType === "type_game" ? collectionSymbol === "star_atlas" :
+    collectionSymbol.trim().length > 0 && selectedMints.size > 0;
 
   const handleSubmit = async () => {
     if (!publicKey) return;
@@ -124,7 +125,7 @@ function CreateCommunityForm() {
         slug,
         description,
         collectionType,
-        collectionAddress: collectionType === "type_a" ? collectionSymbol : (parentId || collectionSymbol),
+        collectionAddress: collectionType === "type_a" || collectionType === "type_game" ? collectionSymbol : (parentId || collectionSymbol),
         parentCommunityId: collectionType === "type_b" ? parentId : null,
         preferredView,
         vipThreshold,
@@ -182,21 +183,21 @@ function CreateCommunityForm() {
             {/* Type selector */}
             <div>
               <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Community Type</label>
-              <div className="grid grid-cols-2 gap-3">
-                {(["type_a", "type_b"] as CollectionType[]).map((t) => (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {(["type_a", "type_b", "type_game"] as CollectionType[]).map((t) => (
                   <button
                     key={t}
                     onClick={() => setCollectionType(t)}
-                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionType === t ? (t === "type_a" ? "border-violet-500 bg-violet-500/10" : "border-cyan-500 bg-cyan-500/10") : "border-white/10 hover:border-white/20"}`}
+                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionType === t ? (t === "type_a" ? "border-violet-500 bg-violet-500/10" : t === "type_b" ? "border-cyan-500 bg-cyan-500/10" : "border-emerald-500 bg-emerald-500/10") : "border-white/10 hover:border-white/20"}`}
                   >
-                    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${t === "type_a" ? "bg-violet-500 text-white" : "bg-cyan-500 text-neutral-950"}`}>
-                      {t === "type_a" ? "A" : "B"}
+                    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${t === "type_a" ? "bg-violet-500 text-white" : t === "type_b" ? "bg-cyan-500 text-neutral-950" : "bg-emerald-500 text-neutral-950"}`}>
+                      {t === "type_a" ? "A" : t === "type_b" ? "B" : "🎮"}
                     </span>
                     <span className="text-sm font-bold text-white">
-                      {t === "type_a" ? "Full Collection" : "Curated Sub-Collection"}
+                      {t === "type_a" ? "Full Collection" : t === "type_b" ? "Curated Sub-Collection" : "Game Integration"}
                     </span>
                     <span className="text-xs text-stone-500">
-                      {t === "type_a" ? "Link to a full Magic Eden collection" : "Hand-pick NFTs from an existing Type A community"}
+                      {t === "type_a" ? "Link to a full Magic Eden collection" : t === "type_b" ? "Hand-pick NFTs from an existing Type A community" : "Bespoke hub for Web3 Games (e.g. Star Atlas)"}
                     </span>
                     {t === "type_b" && (
                       <span className="text-[10px] font-semibold text-amber-400">Requires a Type A community first</span>
@@ -356,13 +357,44 @@ function CreateCommunityForm() {
               </>
             )}
 
+            {collectionType === "type_game" && (
+              <>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Supported Web3 Games</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      onClick={() => setCollectionSymbol("star_atlas")}
+                      className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionSymbol === "star_atlas" ? "border-emerald-500 bg-emerald-500/10" : "border-white/10 hover:border-white/20"}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">✨</span>
+                        <div>
+                          <span className="text-sm font-bold text-white">Star Atlas</span>
+                          <p className="text-xs text-stone-500">Galactic Marketplace Integration</p>
+                        </div>
+                        {collectionSymbol === "star_atlas" && (
+                          <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-xs text-emerald-400">✓</span>
+                        )}
+                      </div>
+                    </button>
+                    <div className="rounded-xl border border-dashed border-white/5 p-4 text-center">
+                      <p className="text-xs text-stone-600">More games coming soon...</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 rounded-xl border border-white/10 py-3 text-sm font-bold text-stone-400 transition hover:border-white/20 hover:text-white">
                 ← Back
               </button>
               <button
                 disabled={!canProceedStep2}
-                onClick={() => setStep(3)}
+                onClick={() => {
+                  if (collectionType === "type_game") setPreferredView("custom_code");
+                  setStep(3);
+                }}
                 className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next: Appearance →
@@ -374,51 +406,63 @@ function CreateCommunityForm() {
         {/* ── STEP 3: Appearance ── */}
         {step === 3 && (
           <div className="space-y-6">
-            <div>
-              <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Page Style</label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {[
-                  { value: "timeline1",     icon: "📜", label: "Timeline 1",         desc: "Alternating card layout" },
-                  { value: "timeline2",     icon: "🎨", label: "Timeline 2",         desc: "Visual timeline" },
-                  { value: "timeline3",     icon: "⚡", label: "Timeline 3",         desc: "Progress style" },
-                  { value: "timeline4",     icon: "📖", label: "Story Mode",         desc: "Chapter cards" },
-                  { value: "timeline5",     icon: "🚀", label: "Scroll Story",       desc: "Cinematic space journey" },
-                  { value: "custom_nocode", icon: "✨", label: "Custom (No Code)",   desc: "Visual scene builder — edit after creating" },
-                  { value: "custom_code",   icon: "💻", label: "Custom (With Code)", desc: "Write raw JSON config for full control" },
-                ].map(v => (
-                  <button
-                    key={v.value}
-                    onClick={() => setPreferredView(v.value)}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${preferredView === v.value ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"}`}
-                  >
-                    <span className="text-xl shrink-0">{v.icon}</span>
-                    <div className="min-w-0">
-                      <p className={`text-sm font-bold ${preferredView === v.value ? "text-violet-300" : "text-white"}`}>{v.label}</p>
-                      <p className="text-xs text-stone-500">{v.desc}</p>
-                    </div>
-                    {(v.value === "custom_nocode" || v.value === "custom_code") && (
-                      <span className="ml-auto shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-amber-400">New</span>
-                    )}
-                  </button>
-                ))}
+            {collectionType === "type_game" ? (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
+                <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">Game Hub Layout</p>
+                <p className="mt-3 text-sm text-stone-300">
+                  Web3 Games use a bespoke layout specifically tailored to their API.
+                </p>
+                <p className="mt-2 text-xs text-emerald-300/80">
+                  ✨ After publishing, you can inject a custom story using the <strong>HTML Editor</strong>.
+                </p>
               </div>
+            ) : (
+              <div>
+                <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Page Style</label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {[
+                    { value: "timeline1",     icon: "📜", label: "Timeline 1",         desc: "Alternating card layout" },
+                    { value: "timeline2",     icon: "🎨", label: "Timeline 2",         desc: "Visual timeline" },
+                    { value: "timeline3",     icon: "⚡", label: "Timeline 3",         desc: "Progress style" },
+                    { value: "timeline4",     icon: "📖", label: "Story Mode",         desc: "Chapter cards" },
+                    { value: "timeline5",     icon: "🚀", label: "Scroll Story",       desc: "Cinematic space journey" },
+                    { value: "custom_nocode", icon: "✨", label: "Custom (No Code)",   desc: "Visual scene builder — edit after creating" },
+                    { value: "custom_code",   icon: "💻", label: "Custom (With Code)", desc: "Write raw JSON config for full control" },
+                  ].map(v => (
+                    <button
+                      key={v.value}
+                      onClick={() => setPreferredView(v.value)}
+                      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${preferredView === v.value ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"}`}
+                    >
+                      <span className="text-xl shrink-0">{v.icon}</span>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-bold ${preferredView === v.value ? "text-violet-300" : "text-white"}`}>{v.label}</p>
+                        <p className="text-xs text-stone-500">{v.desc}</p>
+                      </div>
+                      {(v.value === "custom_nocode" || v.value === "custom_code") && (
+                        <span className="ml-auto shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-amber-400">New</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
 
-              {/* Hints for custom modes */}
-              {preferredView === "custom_nocode" && (
-                <p className="mt-3 rounded-lg border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-xs text-violet-300">
-                  ✨ After publishing, go to <strong>My Communities → Edit</strong> to visually build your story scenes — drag, color, and write narration with no code.
-                </p>
-              )}
-              {preferredView === "custom_code" && (
-                <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-300">
-                  💻 After publishing, go to <strong>My Communities → Edit</strong> to write raw <code className="rounded bg-amber-900/30 px-1">theme_settings</code> JSON — full control over scenes, colors, and behavior.
-                </p>
-              )}
+                {/* Hints for custom modes */}
+                {preferredView === "custom_nocode" && (
+                  <p className="mt-3 rounded-lg border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-xs text-violet-300">
+                    ✨ After publishing, go to <strong>My Communities → Edit</strong> to visually build your story scenes — drag, color, and write narration with no code.
+                  </p>
+                )}
+                {preferredView === "custom_code" && (
+                  <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-300">
+                    💻 After publishing, go to <strong>My Communities → Edit</strong> to write raw <code className="rounded bg-amber-900/30 px-1">theme_settings</code> JSON — full control over scenes, colors, and behavior.
+                  </p>
+                )}
 
-              <p className="mt-3 text-[10px] text-stone-600">
-                💡 The gallery view is always shown below your page.
-              </p>
-            </div>
+                <p className="mt-3 text-[10px] text-stone-600">
+                  💡 The gallery view is always shown below your page.
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">

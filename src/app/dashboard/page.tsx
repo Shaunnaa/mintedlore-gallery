@@ -23,17 +23,20 @@ type Community = {
   created_at: string;
 };
 
-function CommunityCard({ community, children }: { community: Community; children?: React.ReactNode }) {
-  const isTypeA = community.collection_type === "type_a";
+function CommunityCard({ community, children }: { community: any, children?: React.ReactNode }) {
+  const isGame = community.collection_address === "star_atlas";
+  const isTypeA = community.collection_type === "type_a" && !isGame;
+  const isTypeB = community.collection_type === "type_b";
+
   return (
-    <div className={`group relative overflow-hidden border bg-[#0d0d12] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] ${isTypeA ? "border-violet-500/30 hover:border-violet-400/60" : "border-cyan-500/20 hover:border-cyan-400/50"}`}>
+    <div className={`group relative overflow-hidden border bg-[#0d0d12] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] ${isGame ? "border-emerald-500/30 hover:border-emerald-400/60" : isTypeA ? "border-violet-500/30 hover:border-violet-400/60" : "border-cyan-500/20 hover:border-cyan-400/50"}`}>
       {/* Type badge */}
-      <div className={`flex items-center gap-2 border-b px-4 py-2 ${isTypeA ? "border-violet-500/20 bg-violet-500/5" : "border-cyan-500/20 bg-cyan-500/5"}`}>
-        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${isTypeA ? "bg-violet-500 text-white" : "bg-cyan-500 text-neutral-950"}`}>
-          {isTypeA ? "A" : "B"}
+      <div className={`flex items-center gap-2 border-b px-4 py-2 ${isGame ? "border-emerald-500/20 bg-emerald-500/5" : isTypeA ? "border-violet-500/20 bg-violet-500/5" : "border-cyan-500/20 bg-cyan-500/5"}`}>
+        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${isGame ? "bg-emerald-500 text-neutral-950" : isTypeA ? "bg-violet-500 text-white" : "bg-cyan-500 text-neutral-950"}`}>
+          {isGame ? "🎮" : isTypeA ? "A" : "B"}
         </span>
-        <span className={`text-[10px] font-semibold uppercase tracking-widest ${isTypeA ? "text-violet-400" : "text-cyan-400"}`}>
-          {isTypeA ? "Full Collection" : "Curated Sub-Collection"}
+        <span className={`text-[10px] font-semibold uppercase tracking-widest ${isGame ? "text-emerald-400" : isTypeA ? "text-violet-400" : "text-cyan-400"}`}>
+          {isGame ? "Game Integration" : isTypeA ? "Full Collection" : "Curated Sub-Collection"}
         </span>
       </div>
 

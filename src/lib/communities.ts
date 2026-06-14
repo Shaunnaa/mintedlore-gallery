@@ -27,6 +27,13 @@ export type ThemeSettings = {
   chapters?: { letter: string; title: string; color: string }[];
   customCss?: string;         // for custom_code mode
   customHtml?: string;        // for completely custom UI rendering
+  nftStories?: {
+    name: string;
+    assetId?: string; // backwards compatibility
+    assetIds?: string[];
+    html: string;
+  }[]; // for Game Hubs
+  selectedAssetIds?: string[]; // for Game Hub asset selection
 };
 
 export type Community = {
@@ -39,7 +46,7 @@ export type Community = {
   image: string;
   themeSettings?: ThemeSettings;
   vipThreshold?: number;
-  collectionType?: "type_a" | "type_b";
+  collectionType?: "type_a" | "type_b" | "type_game";
   parentCommunityId?: number | null;
 };
 

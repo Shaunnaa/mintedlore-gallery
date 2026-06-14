@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CommunityViewSwitcher } from "@/components/templates/CommunityViewSwitcher";
 import { WalletChecker } from "@/components/wallet/WalletChecker";
 import { HolderBadge } from "@/components/wallet/HolderBadge";
+import { StarAtlasHub } from "@/components/games/StarAtlasHub";
 import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
 import {
   fetchActiveListings,
@@ -48,12 +49,19 @@ export default async function GroupPage({ params }: GroupPageProps) {
     );
   }
 
+  // ── Standard Magic Eden Logic ──
   const [statsResult, listingsResult] = await Promise.all([
     fetchCollectionStats(community.collectionAddress),
     fetchActiveListings(0, LISTINGS_PAGE_SIZE, community.collectionAddress),
   ]);
 
   let finalListings = listingsResult.data || [];
+
+  // ── Route to Game Integration Hub if applicable ──
+  if (community.collectionType === "type_game" && community.collectionAddress === "star_atlas") {
+    return <StarAtlasHub community={community} stats={statsResult.data} listings={finalListings} />;
+  }
+
 
   if (community.collectionType === "type_b") {
     const { data: nfts } = await supabase

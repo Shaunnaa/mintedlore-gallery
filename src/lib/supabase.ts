@@ -21,7 +21,7 @@ export function mapCommunityRecord(row: any): Community {
     image: row.image || "/window.svg",
     themeSettings: row.theme_settings,
     vipThreshold: row.vip_threshold,
-    collectionType: row.collection_type,
+    collectionType: row.collection_address === "star_atlas" ? "type_game" : row.collection_type,
     parentCommunityId: row.parent_community_id,
   };
 }
