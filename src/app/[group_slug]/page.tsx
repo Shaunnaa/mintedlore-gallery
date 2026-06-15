@@ -11,6 +11,7 @@ import {
   fetchTokensByMints,
   LISTINGS_PAGE_SIZE,
 } from "@/services/magicEden";
+import { getCollectionAssets } from "@/services/metaplex";
 
 type GroupPageProps = {
   params: Promise<{
@@ -50,13 +51,30 @@ export default async function GroupPage({ params }: GroupPageProps) {
     );
   }
 
-  // ── Standard Magic Eden Logic ──
-  const [statsResult, listingsResult] = await Promise.all([
-    fetchCollectionStats(community.collectionAddress),
-    fetchActiveListings(0, LISTINGS_PAGE_SIZE, community.collectionAddress),
-  ]);
+  // ── Primary Source: DAS API vs Magic Eden ──
+  const isDasAddress = community.collectionAddress.length > 30;
+  let finalListings: any[] = [];
+  let statsData: any = null;
+  let statsError: string | null = null;
+  let listingsError: string | null = null;
 
-  let finalListings = listingsResult.data || [];
+  if (isDasAddress) {
+    // Use DAS API (Primary Source)
+    const { data, error } = await getCollectionAssets(community.collectionAddress, LISTINGS_PAGE_SIZE);
+    finalListings = data || [];
+    listingsError = error;
+    statsData = { floorPrice: 0, listedCount: finalListings.length }; // Mock stats since DAS lacks market data
+  } else {
+    // Use Magic Eden API (Fallback/Secondary for legacy data)
+    const [statsResult, listingsResult] = await Promise.all([
+      fetchCollectionStats(community.collectionAddress),
+      fetchActiveListings(0, LISTINGS_PAGE_SIZE, community.collectionAddress),
+    ]);
+    statsData = statsResult.data;
+    statsError = statsResult.error;
+    finalListings = listingsResult.data || [];
+    listingsError = listingsResult.error;
+  }
 
   // ── Route to Game Integration Hub if applicable ──
   if (community.collectionType === "type_game" || community.collectionAddress === "star_atlas") {
@@ -136,10 +154,10 @@ export default async function GroupPage({ params }: GroupPageProps) {
         <CommunityViewSwitcher
           key={community.slug}
           community={community}
-          stats={statsResult.data}
+          stats={statsData}
           listings={finalListings}
-          statsError={statsResult.error}
-          listingsError={listingsResult.error}
+          statsError={statsError}
+          listingsError={listingsError}
         />
       </section>
     </main>

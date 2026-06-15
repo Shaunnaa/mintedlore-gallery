@@ -11,6 +11,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing collection symbol" }, { status: 400 });
     }
 
+    // If it looks like a Base58 Metaplex DAS Address, we don't fetch Magic Eden stats
+    if (symbol.length > 30) {
+      return NextResponse.json({
+        stats: {
+          symbol: symbol,
+          floorPrice: 0, // DAS doesn't provide market floor prices
+          listedCount: 1, // Mock value so the UI knows it's valid
+          volumeAll: 0,
+        }
+      }, { status: 200 });
+    }
+
     const result = await fetchCollectionStats(symbol);
 
     if (result.error) {

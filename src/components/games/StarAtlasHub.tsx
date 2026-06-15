@@ -231,7 +231,7 @@ export function StarAtlasHub({ community, stats, listings }: StarAtlasHubProps) 
                 </button>
               ))}
             </div>
-            <div className="mt-8 min-h-[600px] w-full rounded-2xl border border-white/10 bg-black/50 p-4 sm:p-8">
+            <div className="mt-8 min-h-[600px] w-full rounded-2xl border border-white/10 bg-[#03030c] overflow-hidden">
               {(() => {
                 const story = nftStories[activeStoryIndex];
                 if (!story) return null;
