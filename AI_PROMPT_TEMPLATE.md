@@ -29,6 +29,7 @@ This HTML will be injected directly into a web platform. You must follow these s
    - Use `{{NFT_IMAGE_1}}` for the first character's image URL, `{{NFT_IMAGE_2}}` for the second, etc.
    - Use `{{NFT_NAME_1}}` for the first character's name, `{{NFT_NAME_2}}` for the second, etc.
    - **Rule:** Whenever the story focuses on a specific character, you MUST display their image prominently in a beautiful, full-box "NFT Card" layout alongside or behind their text block as the user scrolls to their section.
+   - **Image Sizing (CRITICAL):** NEVER use fixed heights (like `height: 500px`) for `.nft-card img` because it cuts off character heads! ALWAYS use `width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: top center;` to ensure the character's face remains visible.
 7. **Design Aesthetics:** Use beautiful, modern sci-fi aesthetics. Dark space backgrounds, glowing drop-shadows on the images, gradient text, and elegant typography.
 
 ### Story Requirements:

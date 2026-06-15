@@ -89,7 +89,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   // ── Route to Game Integration Hub if applicable ──
   if (community.collectionType === "type_game" || community.collectionAddress === "star_atlas") {
-    redirect(`/game/${community.slug}`);
+    redirect(`/nft-game/${community.slug}`);
   }
 
   if (community.collectionType === "type_b") {

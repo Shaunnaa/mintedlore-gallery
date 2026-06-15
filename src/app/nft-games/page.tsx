@@ -89,7 +89,7 @@ export default async function GamesPage() {
                 return (
                   <Link
                     key={community.id}
-                    href={`/game/${community.slug}`}
+                    href={`/nft-game/${community.slug}`}
                     className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/30 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/40"
                   >
                     {/* Banner */}

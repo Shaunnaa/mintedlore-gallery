@@ -35,7 +35,7 @@ export default async function GamePage({ params }: GamePageProps) {
             This game hub does not exist or is not categorized as a game.
           </p>
           <Link
-            href="/games"
+            href="/nft-games"
             className="mt-6 inline-flex h-11 items-center justify-center border border-cyan-300/50 bg-cyan-300 px-5 text-sm font-semibold text-neutral-950 transition hover:bg-white"
           >
             Back to Games
