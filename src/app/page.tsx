@@ -70,30 +70,21 @@ export default async function Home() {
               <Link
                 key={community.id}
                 href={`/${community.slug}`}
-                className="group grid gap-5 border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-300/50 hover:bg-white/[0.065] lg:grid-cols-[120px_1fr]"
+                className="group grid gap-6 border border-white/10 bg-white/[0.02] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.04] sm:grid-cols-[140px_1fr] sm:items-center"
               >
-                <div className="flex aspect-square items-center justify-center border border-white/10 bg-neutral-950 p-8">
+                <div className="flex aspect-square w-full items-center justify-center border border-white/10 bg-neutral-950">
                   <Image
                     src={community.image}
                     alt=""
-                    width={72}
-                    height={72}
-                    className="opacity-80 transition duration-300 group-hover:opacity-100"
+                    width={64}
+                    height={64}
+                    className="opacity-60 transition duration-500 group-hover:opacity-100 group-hover:scale-110"
                   />
                 </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                    Group {community.id} / {community.preferredView}
-                  </p>
-                  <h3 className="mt-3 text-2xl font-semibold text-white">
+                <div className="flex flex-col p-2 sm:p-0 justify-center">
+                  <h3 className="text-3xl font-bold text-white transition group-hover:text-emerald-300">
                     {community.name}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-stone-400">
-                    {community.description}
-                  </p>
-                  <p className="mt-5 font-mono text-sm text-stone-500">
-                    {community.collectionAddress}
-                  </p>
                 </div>
               </Link>
             ))}

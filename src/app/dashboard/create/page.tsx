@@ -36,9 +36,11 @@ function CreateCommunityForm() {
   const [description, setDescription] = useState("");
 
   // Step 2 — Type A
+  const [collectionAddress, setCollectionAddress] = useState("");
   const [collectionSymbol, setCollectionSymbol] = useState(preselectedSymbol ?? "");
   const [preview, setPreview]     = useState<{ floor: number; count: number } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [symbolLookupLoading, setSymbolLookupLoading] = useState(false);
 
   // Step 2 — Type B
   const [parentId, setParentId]   = useState<string>(preselectedParent ?? "");
@@ -81,6 +83,29 @@ function CreateCommunityForm() {
     }
   }, [preselectedType, preselectedSymbol, loadParentNfts]);
 
+  // Reverse-lookup ME symbol from On-Chain Address
+  useEffect(() => {
+    if (collectionAddress.length >= 32 && !collectionSymbol) {
+      const lookupSymbol = async () => {
+        setSymbolLookupLoading(true);
+        try {
+          const res = await fetch(`/api/magic-eden/reverse-lookup?address=${collectionAddress}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.symbol) setCollectionSymbol(data.symbol);
+          }
+        } catch (err) {
+          console.error("Failed to lookup symbol", err);
+        } finally {
+          setSymbolLookupLoading(false);
+        }
+      };
+      // Add a slight debounce to not fire on every keystroke as they paste
+      const timeoutId = setTimeout(lookupSymbol, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [collectionAddress, collectionSymbol]);
+
   const previewCollection = async () => {
     if (!collectionSymbol) return;
     setPreviewLoading(true);
@@ -110,9 +135,9 @@ function CreateCommunityForm() {
 
   const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
   const canProceedStep2 = 
-    collectionType === "type_a" ? collectionSymbol.trim().length > 0 :
+    collectionType === "type_a" ? collectionAddress.trim().length > 30 :
     collectionType === "type_game" ? collectionSymbol === "star_atlas" :
-    collectionSymbol.trim().length > 0 && selectedMints.size > 0;
+    collectionAddress.trim().length > 30 && selectedMints.size > 0;
 
   const handleSubmit = async () => {
     if (!publicKey) return;
@@ -125,11 +150,12 @@ function CreateCommunityForm() {
         slug,
         description,
         collectionType,
-        collectionAddress: collectionType === "type_a" || collectionType === "type_game" ? collectionSymbol : (parentId || collectionSymbol),
+        collectionAddress: collectionType === "type_game" ? "star_atlas" : collectionAddress,
         parentCommunityId: collectionType === "type_b" ? parentId : null,
         preferredView,
         vipThreshold,
         selectedMints: collectionType === "type_b" ? Array.from(selectedMints) : [],
+        meSymbol: collectionSymbol || null,
       };
       const res = await fetch("/api/community/create", { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" } });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed to create");
@@ -255,22 +281,38 @@ function CreateCommunityForm() {
           <div className="space-y-6">
             {collectionType === "type_a" && (
               <>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Collection Address or ME Symbol</label>
-                  <div className="flex gap-2">
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">On-Chain Collection Address (Required)</label>
                     <input
-                      className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
-                      placeholder="e.g. mad_lads"
-                      value={collectionSymbol}
-                      onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
+                      placeholder="e.g. 5PA... (Base58 Address)"
+                      value={collectionAddress}
+                      onChange={e => setCollectionAddress(e.target.value)}
                     />
-                    <button
-                      onClick={previewCollection}
-                      disabled={!collectionSymbol || previewLoading}
-                      className="rounded-lg border border-violet-500/50 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-300 transition hover:bg-violet-500/20 disabled:opacity-40"
-                    >
-                      {previewLoading ? "…" : "Preview"}
-                    </button>
+                    <p className="mt-2 text-[10px] text-stone-500">Used by Metaplex DAS API to fetch the collection NFTs.</p>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
+                      Magic Eden Symbol <span className="text-stone-600">(Optional)</span>
+                      {symbolLookupLoading && <span className="ml-2 text-violet-400 animate-pulse">Auto-detecting...</span>}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
+                        placeholder="e.g. mad_lads"
+                        value={collectionSymbol}
+                        onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
+                      />
+                      <button
+                        onClick={previewCollection}
+                        disabled={!collectionSymbol || previewLoading}
+                        className="rounded-lg border border-violet-500/50 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-300 transition hover:bg-violet-500/20 disabled:opacity-40"
+                      >
+                        {previewLoading ? "…" : "Preview"}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[10px] text-stone-500">Used to pull floor prices and marketplace data.</p>
                   </div>
                 </div>
                 {preview && (
@@ -288,22 +330,33 @@ function CreateCommunityForm() {
             {collectionType === "type_b" && (
               <>
                 {!preselectedParent ? (
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Type A Collection Symbol</label>
-                    <div className="flex gap-2">
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Type A On-Chain Address</label>
                       <input
-                        className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
-                        placeholder="e.g. mad_lads"
-                        value={collectionSymbol}
-                        onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
+                        placeholder="e.g. 5PA..."
+                        value={collectionAddress}
+                        onChange={e => setCollectionAddress(e.target.value)}
                       />
-                      <button
-                        onClick={() => loadParentNfts(collectionSymbol)}
-                        disabled={!collectionSymbol || nftsLoading}
-                        className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-40"
-                      >
-                        {nftsLoading ? "…" : "Load NFTs"}
-                      </button>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Magic Eden Symbol</label>
+                      <div className="flex gap-2">
+                        <input
+                          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
+                          placeholder="e.g. mad_lads"
+                          value={collectionSymbol}
+                          onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
+                        />
+                        <button
+                          onClick={() => loadParentNfts(collectionSymbol)}
+                          disabled={!collectionSymbol || nftsLoading}
+                          className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-40"
+                        >
+                          {nftsLoading ? "…" : "Load NFTs"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (

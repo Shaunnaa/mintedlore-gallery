@@ -68,40 +68,24 @@ export default async function NftGalleryPage() {
                 <Link
                   key={community.id}
                   href={`/${community.slug}`}
-                  className="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.06]"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.05]"
                 >
                   {/* Image */}
-                  <div className="flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-neutral-950">
+                  <div className="flex h-48 w-full items-center justify-center bg-neutral-950 border-b border-white/10">
                     <Image
                       src={community.image}
                       alt={community.name}
-                      width={80}
-                      height={80}
-                      className="opacity-80 transition duration-300 group-hover:opacity-100 group-hover:scale-110"
+                      width={96}
+                      height={96}
+                      className="opacity-70 transition duration-500 group-hover:opacity-100 group-hover:scale-110"
                     />
                   </div>
 
                   {/* Info */}
-                  <div className="flex flex-col gap-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                      {community.preferredView.replace("_", " ")}
-                    </p>
-                    <h3 className="text-xl font-semibold text-white group-hover:text-emerald-300 transition">
+                  <div className="flex flex-col p-6 items-center text-center">
+                    <h3 className="text-2xl font-bold text-white group-hover:text-emerald-300 transition">
                       {community.name}
                     </h3>
-                    <p className="line-clamp-2 text-sm leading-6 text-stone-400">
-                      {community.description}
-                    </p>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
-                    <span className="font-mono text-xs text-stone-600 truncate max-w-[160px]">
-                      {community.collectionAddress}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
-                      View →
-                    </span>
                   </div>
                 </Link>
               ))}

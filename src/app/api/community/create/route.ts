@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       preferredView,
       vipThreshold,
       selectedMints,        // string[] for type_b, [] for type_a
+      meSymbol,             // Optional Magic Eden symbol
     } = await request.json();
 
     // ── Validation ────────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
         parent_community_id: parentCommunityId || null,
         preferred_view: preferredView ?? "timeline1",
         vip_threshold: vipThreshold ?? 1,
+        theme_settings: meSymbol ? { magicEdenSymbol: meSymbol } : null,
       })
       .select()
       .single();

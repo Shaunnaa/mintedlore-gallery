@@ -53,22 +53,33 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   // ── Primary Source: DAS API vs Magic Eden ──
   const isDasAddress = community.collectionAddress.length > 30;
+  const meSymbol = community.themeSettings?.magicEdenSymbol;
+
   let finalListings: any[] = [];
   let statsData: any = null;
   let statsError: string | null = null;
   let listingsError: string | null = null;
 
   if (isDasAddress) {
-    // Use DAS API (Primary Source)
+    // Use DAS API (Primary Source) for assets
     const { data, error } = await getCollectionAssets(community.collectionAddress, LISTINGS_PAGE_SIZE);
     finalListings = data || [];
     listingsError = error;
-    statsData = { floorPrice: 0, listedCount: finalListings.length }; // Mock stats since DAS lacks market data
+
+    // Use Magic Eden API for stats if symbol was provided
+    if (meSymbol) {
+      const statsResult = await fetchCollectionStats(meSymbol);
+      statsData = statsResult.data;
+      statsError = statsResult.error;
+    } else {
+      statsData = { floorPrice: 0, listedCount: finalListings.length };
+    }
   } else {
-    // Use Magic Eden API (Fallback/Secondary for legacy data)
+    // Legacy fallback using Magic Eden for both assets and stats
+    const querySymbol = meSymbol || community.collectionAddress;
     const [statsResult, listingsResult] = await Promise.all([
-      fetchCollectionStats(community.collectionAddress),
-      fetchActiveListings(0, LISTINGS_PAGE_SIZE, community.collectionAddress),
+      fetchCollectionStats(querySymbol),
+      fetchActiveListings(0, LISTINGS_PAGE_SIZE, querySymbol),
     ]);
     statsData = statsResult.data;
     statsError = statsResult.error;
