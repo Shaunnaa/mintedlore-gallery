@@ -26,14 +26,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex bg-neutral-950">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="flex bg-neutral-950">
         <SolanaWalletProvider>
           <Sidebar />
-          <div className="flex-1 min-h-screen overflow-y-auto">
+          <div className="flex-1 min-h-screen">
             {children}
           </div>
         </SolanaWalletProvider>
