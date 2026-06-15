@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CommunityViewSwitcher } from "@/components/templates/CommunityViewSwitcher";
 import { WalletChecker } from "@/components/wallet/WalletChecker";
 import { HolderBadge } from "@/components/wallet/HolderBadge";
+import { redirect } from "next/navigation";
 import { StarAtlasHub } from "@/components/games/StarAtlasHub";
 import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
 import {
@@ -58,10 +59,9 @@ export default async function GroupPage({ params }: GroupPageProps) {
   let finalListings = listingsResult.data || [];
 
   // ── Route to Game Integration Hub if applicable ──
-  if (community.collectionType === "type_game" && community.collectionAddress === "star_atlas") {
-    return <StarAtlasHub community={community} stats={statsResult.data} listings={finalListings} />;
+  if (community.collectionType === "type_game" || community.collectionAddress === "star_atlas") {
+    redirect(`/game/${community.slug}`);
   }
-
 
   if (community.collectionType === "type_b") {
     const { data: nfts } = await supabase
