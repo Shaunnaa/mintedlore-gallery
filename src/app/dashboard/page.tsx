@@ -98,8 +98,8 @@ export default function DashboardPage() {
         <div className="mb-12 flex items-start justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-400">Owner Dashboard</p>
-            <h1 className="mt-3 text-4xl font-black text-white">My Communities</h1>
-            <p className="mt-2 text-sm text-stone-400">Create and manage your NFT gallery communities.</p>
+            <h1 className="mt-3 text-4xl font-black text-white">My Collections</h1>
+            <p className="mt-2 text-sm text-stone-400">Create and manage your NFT gallery collections.</p>
           </div>
           {connected && (
             <Link

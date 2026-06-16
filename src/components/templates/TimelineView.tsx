@@ -38,51 +38,7 @@ export function TimelineView({
           {community.description}
         </p>
 
-        {statsError ? (
-          <p className="mt-5 border border-red-400/30 bg-red-950/20 px-4 py-3 text-sm text-red-100">
-            {statsError}
-          </p>
-        ) : (
-          <div className="mt-8 flex flex-col gap-6">
-            {/* Currency Toggle */}
-            <div className="flex gap-1 rounded-lg bg-black/40 p-1 w-max border border-white/5">
-              {(["SOL", "USD", "THB"] as Currency[]).map((cur) => (
-                <button
-                  key={cur}
-                  onClick={() => setSelectedCurrency(cur)}
-                  className={`px-3 py-1 text-xs font-bold uppercase tracking-wider transition-all duration-300 rounded-md ${
-                    selectedCurrency === cur
-                      ? "bg-emerald-500/20 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.2)]"
-                      : "text-stone-500 hover:text-stone-300 hover:bg-white/5"
-                  }`}
-                >
-                  {cur}
-                </button>
-              ))}
-            </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="border border-white/10 bg-neutral-950 p-5">
-                <p className="text-sm font-medium text-stone-400">Floor</p>
-                <p className="mt-2 text-3xl font-semibold text-white transition-all duration-300">
-                  {formatValue(stats?.floorPrice)}
-                </p>
-              </div>
-              <div className="border border-white/10 bg-neutral-950 p-5">
-                <p className="text-sm font-medium text-stone-400">Volume</p>
-                <p className="mt-2 text-3xl font-semibold text-white transition-all duration-300">
-                  {formatValue(stats?.volumeAll)}
-                </p>
-              </div>
-              <div className="border border-white/10 bg-neutral-950 p-5">
-                <p className="text-sm font-medium text-stone-400">Listed</p>
-                <p className="mt-2 text-3xl font-semibold text-white transition-all duration-300">
-                  {stats?.listedCount ?? 0}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
       <section className="relative mx-auto w-full max-w-4xl py-12">

@@ -35,8 +35,8 @@ function CreateCommunityForm() {
   const [slug, setSlug]           = useState("");
   const [description, setDescription] = useState("");
 
-  // Step 2 — Type A
-  const [collectionAddress, setCollectionAddress] = useState("");
+  // Step 2 
+  const [collectionAddress, setCollectionAddress] = useState(preselectedSymbol ?? "");
   const [collectionSymbol, setCollectionSymbol] = useState(preselectedSymbol ?? "");
   const [preview, setPreview]     = useState<{ floor: number; count: number } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);

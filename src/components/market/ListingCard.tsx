@@ -8,7 +8,8 @@ type ListingCardProps = {
   isOwned?: boolean;
 };
 
-function truncateAddress(address: string): string {
+function truncateAddress(address?: string): string {
+  if (!address) return "Unknown";
   if (address.length <= 12) {
     return address;
   }
@@ -57,14 +58,15 @@ export function ListingCard({ listing, isOwned }: ListingCardProps) {
           {listing.name}
         </h3>
         <p className="mt-2 text-xs uppercase tracking-[0.2em] text-stone-500">
-          Curated by {truncateAddress(listing.sellerAddress)}
+          Owned by {truncateAddress(listing.sellerAddress)}
         </p>
 
         <div className="mt-6 flex h-[40px] flex-col items-center justify-center overflow-hidden relative w-full">
-          {/* Price (Visible by default, slides up on hover) */}
-          <p className="absolute font-mono text-sm font-medium text-stone-400 transition-all duration-500 group-hover:-translate-y-10 group-hover:opacity-0">
-            Valued at {formatValue(listing.priceLamports)}
-          </p>
+          {listing.priceLamports > 0 && (
+            <p className="absolute font-mono text-sm font-medium text-emerald-400/80 transition-all duration-500 group-hover:-translate-y-10 group-hover:opacity-0">
+              Listed for: {formatValue(listing.priceLamports)}
+            </p>
+          )}
 
           {/* Buy Button (Hidden by default, slides up on hover) */}
           <a

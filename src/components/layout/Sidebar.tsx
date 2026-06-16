@@ -155,17 +155,31 @@ export function Sidebar() {
             <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
-            {!collapsed && <span className="flex-1">My Communities</span>}
+            {!collapsed && <span className="flex-1">My Collections</span>}
           </Link>
         </div>
       )}
 
       {/* ── Wallet Button ── */}
-      <div className={`border-t border-white/10 px-2 py-3 ${collapsed ? "flex justify-center" : ""}`}>
+      <div className="border-t border-white/10 px-2 py-3 flex justify-center w-full">
         {!collapsed ? (
-          <WalletMultiButtonDynamic className="!w-full !h-10 !rounded-xl !border !border-emerald-400/20 !bg-emerald-400/10 !px-4 !text-sm !font-semibold !text-emerald-300 transition-all hover:!bg-emerald-400 hover:!text-neutral-950" />
+          <WalletMultiButtonDynamic className="!flex !w-full !justify-center !h-10 !rounded-xl !px-4 !text-sm !font-semibold transition-all" />
         ) : (
-          <WalletMultiButtonDynamic className="!h-10 !w-10 !rounded-xl !border !border-emerald-400/20 !bg-emerald-400/10 !p-0 !text-emerald-300" />
+          connected ? (
+            <div className="overflow-hidden w-10 h-10 rounded-xl flex items-center justify-center">
+              <WalletMultiButtonDynamic className="!h-10 !w-10 !min-w-0 !rounded-xl !p-0 !text-[0px] !whitespace-nowrap flex items-center justify-center [&_.wallet-adapter-button-start-icon]:!mr-0" />
+            </div>
+          ) : (
+            <button
+              onClick={() => setCollapsed(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#512da8] text-white transition-all hover:bg-[#1a1f2e]"
+              title="Connect Wallet"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H4.5A2.25 2.25 0 002.25 12v6.75A2.25 2.25 0 004.5 21h15a2.25 2.25 0 002.25-2.25V12z" />
+              </svg>
+            </button>
+          )
         )}
       </div>
 

@@ -51,6 +51,20 @@ export default async function GroupPage({ params }: GroupPageProps) {
     );
   }
 
+  // Fetch related chapters (stories) for this collection
+  const { data: relatedRecords } = await supabase
+    .from("communities")
+    .select("slug, name, collection_type, preferred_view")
+    .eq("collection_address", community.collectionAddress)
+    .order("id");
+
+  const relatedChapters = relatedRecords ? relatedRecords.map(r => ({
+    slug: r.slug,
+    name: r.name,
+    type: r.collection_type,
+    view: r.preferred_view
+  })) : [];
+
   // ── Primary Source: DAS API vs Magic Eden ──
   const isDasAddress = community.collectionAddress.length > 30;
   const meSymbol = community.themeSettings?.magicEdenSymbol;
@@ -61,16 +75,29 @@ export default async function GroupPage({ params }: GroupPageProps) {
   let listingsError: string | null = null;
 
   if (isDasAddress) {
-    // Use DAS API (Primary Source) for assets
-    const { data, error } = await getCollectionAssets(community.collectionAddress, LISTINGS_PAGE_SIZE);
+    // Use DAS API (Primary Source) for assets - fetch 50 items for gallery
+    const { data, error } = await getCollectionAssets(community.collectionAddress, 50);
     finalListings = data || [];
     listingsError = error;
 
-    // Use Magic Eden API for stats if symbol was provided
+    // Use Magic Eden API for stats and prices if symbol was provided
     if (meSymbol) {
-      const statsResult = await fetchCollectionStats(meSymbol);
+      const [statsResult, meListingsResult] = await Promise.all([
+        fetchCollectionStats(meSymbol),
+        fetchActiveListings(0, 100, meSymbol)
+      ]);
+
       statsData = statsResult.data;
       statsError = statsResult.error;
+
+      // Merge ME listing prices into DAS data
+      if (meListingsResult.data) {
+        const priceMap = new Map(meListingsResult.data.map(l => [l.tokenMint, l.priceLamports]));
+        finalListings = finalListings.map(item => ({
+          ...item,
+          priceLamports: priceMap.get(item.tokenMint) || 0
+        }));
+      }
     } else {
       statsData = { floorPrice: 0, listedCount: finalListings.length };
     }
@@ -132,7 +159,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_340px] lg:items-end">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                Group {community.id} / {community.preferredView}
+                Verified On-Chain Community
               </p>
               <h1 className="mt-3 flex flex-wrap items-center text-4xl font-semibold tracking-normal text-white sm:text-6xl">
                 {community.name}
@@ -148,9 +175,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
             </div>
 
             <div className="border border-white/10 bg-white/[0.04] px-5 py-4">
-              <p className="text-sm text-stone-400">Magic Eden Collection</p>
-              <p className="mt-1 font-mono text-lg font-semibold text-white">
-                {community.collectionAddress}
+              <p className="text-sm text-stone-400">On-Chain Address</p>
+              <p className="mt-1 font-mono text-sm font-semibold text-white break-all">
+                {community.collectionAddress.length > 30 
+                  ? `${community.collectionAddress.slice(0, 6)}...${community.collectionAddress.slice(-6)}` 
+                  : community.collectionAddress}
               </p>
             </div>
           </div>
@@ -169,6 +198,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
           listings={finalListings}
           statsError={statsError}
           listingsError={listingsError}
+          relatedChapters={relatedChapters}
         />
       </section>
     </main>

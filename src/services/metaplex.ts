@@ -12,13 +12,16 @@ export type DasAsset = {
       name?: string;
     };
   };
+  ownership?: {
+    owner?: string;
+  };
 };
 
 const HELIUS_RPC_URL = "https://mainnet.helius-rpc.com";
 
 // ─── Fetch entire collection via Metaplex DAS ──────────────────────────────────
 
-export async function getCollectionAssets(collectionAddress: string, limit = 100) {
+export async function getCollectionAssets(collectionAddress: string, limit = 100, page = 1) {
   const apiKey = process.env.HELIUS_API_KEY;
   if (!apiKey) return { data: [], error: "Missing HELIUS_API_KEY" };
 
@@ -33,7 +36,7 @@ export async function getCollectionAssets(collectionAddress: string, limit = 100
         params: {
           groupKey: "collection",
           groupValue: collectionAddress,
-          page: 1,
+          page: page,
           limit: limit,
         },
       }),
@@ -53,6 +56,8 @@ export async function getCollectionAssets(collectionAddress: string, limit = 100
       tokenMint: asset.id,
       name: asset.content?.metadata?.name ?? "Unnamed NFT",
       image: asset.content?.links?.image ?? null,
+      sellerAddress: asset.ownership?.owner ?? "Unknown",
+      sellerName: "Owner",
       priceLamports: 0, // DAS doesn't have floor prices
     }));
 

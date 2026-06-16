@@ -19,6 +19,7 @@ type CommunityViewSwitcherProps = {
   listings: MagicEdenListing[];
   statsError?: string | null;
   listingsError?: string | null;
+  relatedChapters?: {slug: string; name: string; type: string; view: string}[];
 };
 
 export function CommunityViewSwitcher({
@@ -27,6 +28,7 @@ export function CommunityViewSwitcher({
   listings,
   statsError,
   listingsError,
+  relatedChapters = [],
 }: CommunityViewSwitcherProps) {
   const { connected, publicKey } = useWallet();
   const [ownedMints, setOwnedMints] = useState<string[]>([]);
@@ -60,30 +62,29 @@ export function CommunityViewSwitcher({
   }, [connected, publicKey, community.collectionAddress, community.slug]);
 
   const view = community.preferredView;
-  const [activeTab, setActiveTab] = useState<"story" | "gallery">(view === "gallery" ? "gallery" : "story");
 
   return (
     <CurrencyProvider>
-      {view !== "gallery" && (
-        <div className="mb-8 flex justify-center">
-          <div className="inline-flex rounded-xl bg-[#0a0a0f] p-1.5 shadow-inner ring-1 ring-white/10">
-            <button
-              onClick={() => setActiveTab("story")}
-              className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold tracking-wide transition-all ${activeTab === "story" ? "bg-emerald-500/10 text-emerald-300 shadow-sm ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-white"}`}
+      {relatedChapters.length > 0 && (
+        <div className="mb-10 flex flex-wrap justify-center gap-3">
+          {relatedChapters.map((chapter) => (
+            <a
+              key={chapter.slug}
+              href={`/${chapter.slug}`}
+              className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold tracking-wide transition-all shadow-inner ${
+                community.slug === chapter.slug
+                  ? "bg-emerald-500/10 text-emerald-300 shadow-emerald-500/20 ring-1 ring-emerald-500/40"
+                  : "bg-[#0a0a0f] text-stone-400 ring-1 ring-white/10 hover:bg-white/5 hover:text-white"
+              }`}
             >
-              📖 Story / Timeline
-            </button>
-            <button
-              onClick={() => setActiveTab("gallery")}
-              className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold tracking-wide transition-all ${activeTab === "gallery" ? "bg-emerald-500/10 text-emerald-300 shadow-sm ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-white"}`}
-            >
-              🖼️ Gallery
-            </button>
-          </div>
+              {chapter.view === "gallery" ? "🖼️" : "📖"} {chapter.name}
+            </a>
+          ))}
         </div>
       )}
+
       {/* ── Primary view (timeline / custom) ─────────────────────────────── */}
-      {activeTab === "story" && view !== "gallery" && (
+      {view !== "gallery" && (
         <div className="mb-16">
           {view === "timeline1" && (
             <Timeline1View community={community} stats={stats} listings={listings} statsError={statsError} ownedMints={ownedMints} />
@@ -106,8 +107,7 @@ export function CommunityViewSwitcher({
         </div>
       )}
 
-      {/* ── Gallery ─────────────────────────── */}
-      {activeTab === "gallery" && (
+      {view === "gallery" && (
         <div>
           <GalleryView
             community={community}
