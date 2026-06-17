@@ -21,14 +21,8 @@ const VIEWS = ["timeline1", "timeline2", "timeline3", "timeline4", "timeline5", 
 function CreateCommunityForm() {
   const { connected, publicKey } = useWallet();
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const preselectedType  = (searchParams.get("type") === "b" ? "type_b" : null) as CollectionType | null;
-  const preselectedParent = searchParams.get("parent");
-  const preselectedSymbol = searchParams.get("symbol");
-
-  const [step, setStep]           = useState<Step>(1);
-  const [collectionType, setCollectionType] = useState<CollectionType>(preselectedType ?? "type_a");
+  const [step, setStep] = useState<Step>(1);
+  const [collectionType, setCollectionType] = useState<CollectionType>("type_a");
 
   // Step 1 fields
   const [name, setName]           = useState("");
@@ -36,18 +30,13 @@ function CreateCommunityForm() {
   const [description, setDescription] = useState("");
 
   // Step 2 
-  const [collectionAddress, setCollectionAddress] = useState(preselectedSymbol ?? "");
-  const [collectionSymbol, setCollectionSymbol] = useState(preselectedSymbol ?? "");
+  const [collectionAddress, setCollectionAddress] = useState("");
+  const [collectionSymbol, setCollectionSymbol] = useState("");
   const [preview, setPreview]     = useState<{ floor: number; count: number } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [symbolLookupLoading, setSymbolLookupLoading] = useState(false);
 
-  // Step 2 — Type B
-  const [parentId, setParentId]   = useState<string>(preselectedParent ?? "");
-  const [nfts, setNfts]           = useState<NftPreview[]>([]);
-  const [nftsLoading, setNftsLoading] = useState(false);
-  const [selectedMints, setSelectedMints] = useState<Set<string>>(new Set());
-  const [nftSearch, setNftSearch] = useState("");
+
 
   // Step 3
   const [preferredView, setPreferredView] = useState("timeline1");
@@ -61,27 +50,7 @@ function CreateCommunityForm() {
     setSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   }, [name]);
 
-  // Load NFTs from parent Type A collection for the picker (Type B)
-  const loadParentNfts = useCallback(async (symbol: string) => {
-    if (!symbol) return;
-    setNftsLoading(true);
-    try {
-      const res = await fetch(`/api/listings?symbol=${symbol}&limit=40`);
-      const data = await res.json();
-      setNfts(data.listings ?? []);
-    } catch {
-      setNfts([]);
-    } finally {
-      setNftsLoading(false);
-    }
-  }, []);
 
-  // Auto-load NFTs if preselected
-  useEffect(() => {
-    if (preselectedType === "type_b" && preselectedSymbol) {
-      loadParentNfts(preselectedSymbol);
-    }
-  }, [preselectedType, preselectedSymbol, loadParentNfts]);
 
   // Reverse-lookup ME symbol from On-Chain Address
   useEffect(() => {
@@ -125,22 +94,11 @@ function CreateCommunityForm() {
     }
   };
 
-  const toggleMint = (mint: string) => {
-    setSelectedMints(prev => {
-      const next = new Set(prev);
-      next.has(mint) ? next.delete(mint) : next.add(mint);
-      return next;
-    });
-  };
-
   const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
-  const isGameStory = collectionType === "type_b" && collectionSymbol === "star_atlas";
 
   const canProceedStep2 = 
     collectionType === "type_a" ? collectionAddress.trim().length > 30 :
-    collectionType === "type_game" ? collectionSymbol === "star_atlas" :
-    isGameStory ? true :
-    collectionAddress.trim().length > 30 && selectedMints.size > 0;
+    collectionType === "type_game" ? collectionSymbol === "star_atlas" : false;
 
   const handleSubmit = async () => {
     if (!publicKey) return;
@@ -154,10 +112,10 @@ function CreateCommunityForm() {
         description,
         collectionType,
         collectionAddress: collectionType === "type_game" ? "star_atlas" : collectionAddress,
-        parentCommunityId: collectionType === "type_b" ? parentId : null,
+        parentCommunityId: null,
         preferredView,
         vipThreshold,
-        selectedMints: collectionType === "type_b" ? Array.from(selectedMints) : [],
+        selectedMints: [],
         meSymbol: collectionSymbol || null,
       };
       const res = await fetch("/api/community/create", { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" } });
@@ -169,8 +127,6 @@ function CreateCommunityForm() {
       setSubmitting(false);
     }
   };
-
-  const filteredNfts = nfts.filter(n => n.name.toLowerCase().includes(nftSearch.toLowerCase()));
 
   if (!connected) {
     return (
@@ -209,28 +165,24 @@ function CreateCommunityForm() {
         {/* ── STEP 1: Name & Type ── */}
         {step === 1 && (
           <div className="space-y-6">
-            {/* Type selector */}
             <div>
               <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Community Type</label>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {(["type_a", "type_b", "type_game"] as CollectionType[]).map((t) => (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {(["type_a", "type_game"] as CollectionType[]).map((t) => (
                   <button
                     key={t}
                     onClick={() => setCollectionType(t)}
-                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionType === t ? (t === "type_a" ? "border-violet-500 bg-violet-500/10" : t === "type_b" ? "border-cyan-500 bg-cyan-500/10" : "border-emerald-500 bg-emerald-500/10") : "border-white/10 hover:border-white/20"}`}
+                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionType === t ? (t === "type_a" ? "border-violet-500 bg-violet-500/10" : "border-emerald-500 bg-emerald-500/10") : "border-white/10 hover:border-white/20"}`}
                   >
-                    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${t === "type_a" ? "bg-violet-500 text-white" : t === "type_b" ? "bg-cyan-500 text-neutral-950" : "bg-emerald-500 text-neutral-950"}`}>
-                      {t === "type_a" ? "A" : t === "type_b" ? "B" : "🎮"}
+                    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${t === "type_a" ? "bg-violet-500/20 text-violet-300" : "bg-emerald-500/20 text-emerald-300"}`}>
+                      {t === "type_a" ? "🖼️" : "🎮"}
                     </span>
                     <span className="text-sm font-bold text-white">
-                      {t === "type_a" ? "Full Collection" : t === "type_b" ? "Curated Sub-Collection" : "Game Integration"}
+                      {t === "type_a" ? "Full Collection" : "Game Integration"}
                     </span>
                     <span className="text-xs text-stone-500">
-                      {t === "type_a" ? "Link to a full Magic Eden collection" : t === "type_b" ? "Hand-pick NFTs from an existing Type A community" : "Bespoke hub for Web3 Games (e.g. Star Atlas)"}
+                      {t === "type_a" ? "Link to a full Magic Eden collection" : "Bespoke hub for Web3 Games (e.g. Star Atlas)"}
                     </span>
-                    {t === "type_b" && (
-                      <span className="text-[10px] font-semibold text-amber-400">Requires a Type A community first</span>
-                    )}
                   </button>
                 ))}
               </div>
@@ -330,95 +282,7 @@ function CreateCommunityForm() {
               </>
             )}
 
-            {collectionType === "type_b" && (
-              <>
-                {!preselectedParent ? (
-                  <div className="flex flex-col gap-5">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Type A On-Chain Address</label>
-                      <input
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
-                        placeholder="e.g. 5PA..."
-                        value={collectionAddress}
-                        onChange={e => setCollectionAddress(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Parent Magic Eden Symbol</label>
-                      <div className="flex gap-2">
-                        <input
-                          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
-                          placeholder="e.g. mad_lads"
-                          value={collectionSymbol}
-                          onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
-                        />
-                        <button
-                          onClick={() => loadParentNfts(collectionSymbol)}
-                          disabled={!collectionSymbol || nftsLoading}
-                          className="rounded-lg border border-cyan-500/50 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-40"
-                        >
-                          {nftsLoading ? "…" : "Load NFTs"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
-                    <p className="text-xs font-semibold text-cyan-400">Parent Collection Auto-linked ✓</p>
-                    <p className="mt-1 text-sm text-stone-300">
-                      Loading configuration for: <strong className="text-white">{collectionSymbol}</strong>
-                    </p>
-                  </div>
-                )}
 
-                {isGameStory ? (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
-                    <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">Game Integration Sub-Collection</p>
-                    <p className="mt-3 text-sm text-stone-300">
-                      Game assets will be configured dynamically in the editor after creation.
-                    </p>
-                  </div>
-                ) : nfts.length > 0 && (
-                  <div>
-                    <div className="mb-3 flex items-center justify-between">
-                      <label className="text-xs font-semibold uppercase tracking-widest text-stone-400">
-                        Select NFTs <span className="text-cyan-400">({selectedMints.size} selected)</span>
-                      </label>
-                      <input
-                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
-                        placeholder="Search..."
-                        value={nftSearch}
-                        onChange={e => setNftSearch(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
-                      {filteredNfts.map(nft => {
-                        const selected = selectedMints.has(nft.tokenMint);
-                        return (
-                          <button
-                            key={nft.tokenMint}
-                            onClick={() => toggleMint(nft.tokenMint)}
-                            className={`relative aspect-square overflow-hidden rounded-lg border-2 transition ${selected ? "border-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "border-white/10 hover:border-white/30"}`}
-                          >
-                            {nft.image && <Image src={nft.image} alt={nft.name} fill className="object-cover" unoptimized />}
-                            {selected && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-cyan-500/20">
-                                <span className="text-lg font-black text-cyan-300">✓</span>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {selectedMints.size > 0 && (
-                      <p className="mt-2 text-xs text-stone-500">
-                        {selectedMints.size} NFT{selectedMints.size > 1 ? "s" : ""} will define membership in this community
-                      </p>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
 
             {collectionType === "type_game" && (
               <>
@@ -455,7 +319,7 @@ function CreateCommunityForm() {
               <button
                 disabled={!canProceedStep2}
                 onClick={() => {
-                  if (collectionType === "type_game" || isGameStory) setPreferredView("custom_code");
+                  if (collectionType === "type_game") setPreferredView("custom_code");
                   setStep(3);
                 }}
                 className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
@@ -469,7 +333,7 @@ function CreateCommunityForm() {
         {/* ── STEP 3: Appearance ── */}
         {step === 3 && (
           <div className="space-y-6">
-            {collectionType === "type_game" || isGameStory ? (
+            {collectionType === "type_game" ? (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
                 <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">Game Hub Layout</p>
                 <p className="mt-3 text-sm text-stone-300">

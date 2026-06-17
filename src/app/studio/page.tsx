@@ -32,11 +32,11 @@ function CommunityCard({ community, children }: { community: any, children?: Rea
     <div className={`group relative overflow-hidden border bg-[#0d0d12] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] ${isGame ? "border-emerald-500/30 hover:border-emerald-400/60" : isTypeA ? "border-violet-500/30 hover:border-violet-400/60" : "border-cyan-500/20 hover:border-cyan-400/50"}`}>
       {/* Type badge */}
       <div className={`flex items-center gap-2 border-b px-4 py-2 ${isGame ? "border-emerald-500/20 bg-emerald-500/5" : isTypeA ? "border-violet-500/20 bg-violet-500/5" : "border-cyan-500/20 bg-cyan-500/5"}`}>
-        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${isGame ? "bg-emerald-500 text-neutral-950" : isTypeA ? "bg-violet-500 text-white" : "bg-cyan-500 text-neutral-950"}`}>
-          {isGame ? "🎮" : isTypeA ? "A" : "B"}
+        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${isGame ? "bg-emerald-500/20" : isTypeA ? "bg-violet-500/20" : "bg-cyan-500/20"}`}>
+          {isGame ? "🎮" : isTypeA ? "🖼️" : "📖"}
         </span>
         <span className={`text-[10px] font-semibold uppercase tracking-widest ${isGame ? "text-emerald-400" : isTypeA ? "text-violet-400" : "text-cyan-400"}`}>
-          {isGame ? "Game Integration" : isTypeA ? "Full Collection" : "Curated Sub-Collection"}
+          {isGame ? "Game Integration" : isTypeA ? "Full Collection" : "Story"}
         </span>
       </div>
 
@@ -160,10 +160,10 @@ export default function StudioPage() {
                         <CommunityCard community={typeA}>
                           <div className="mt-4 border-t border-white/5 pt-4">
                             <Link
-                              href={`/studio/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
+                              href={`/studio/create-sub?parent=${typeA.id}&symbol=${typeA.collection_address}`}
                               className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-500/30 py-2 text-xs font-semibold text-emerald-500 transition hover:border-emerald-400/60 hover:text-emerald-300"
                             >
-                              + Add Story Sub-Collection
+                              + Add Story
                             </Link>
                           </div>
                         </CommunityCard>
@@ -196,10 +196,10 @@ export default function StudioPage() {
                         <CommunityCard community={typeA}>
                           <div className="mt-4 border-t border-white/5 pt-4">
                             <Link
-                              href={`/studio/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
+                              href={`/studio/create-sub?parent=${typeA.id}&symbol=${typeA.collection_address}`}
                               className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/30 py-2 text-xs font-semibold text-cyan-500 transition hover:border-cyan-400/60 hover:text-cyan-300"
                             >
-                              + Add Type B Sub-Collection
+                              + Add Story
                             </Link>
                           </div>
                         </CommunityCard>
@@ -224,12 +224,12 @@ export default function StudioPage() {
         {/* Legend */}
         <div className="mt-16 flex flex-wrap gap-6 border-t border-white/5 pt-8 text-xs text-stone-600">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-black text-white">A</span>
-            <span>Full Magic Eden Collection — one per collection symbol</span>
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/20 text-[10px] font-black text-white">🖼️</span>
+            <span>Full Collection — your complete on-chain community</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-neutral-950">B</span>
-            <span>Curated Sub-Collection — hand-picked NFTs from a Type A</span>
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500/20 text-[10px] font-black text-neutral-950">📖</span>
+            <span>Story — hand-picked NFTs with custom narratives</span>
           </div>
         </div>
       </div>
