@@ -45,6 +45,14 @@ export default async function GamePage({ params }: GamePageProps) {
     );
   }
 
+  // ── Load child stories (type B) for this game ──
+  const { data: storyRows } = await supabase
+    .from("communities")
+    .select("slug,name,preferred_view")
+    .eq("parent_community_id", community.id)
+    .eq("collection_type", "type_b");
+  const stories = storyRows || [];
+
   // ── Standard Magic Eden Logic ──
   const [statsResult, listingsResult] = await Promise.all([
     fetchCollectionStats(community.collectionAddress),
@@ -53,7 +61,15 @@ export default async function GamePage({ params }: GamePageProps) {
 
   const finalListings = listingsResult.data || [];
 
-  // Currently we only have the StarAtlasHub, but we can add more game hubs here.
-  // We'll use StarAtlasHub as the default game hub template for now.
-  return <StarAtlasHub community={community} stats={statsResult.data} listings={finalListings} />;
+  // Render the gallery UI (StarAtlasHub) and pass the stories down to it
+  return (
+    <StarAtlasHub 
+      community={community} 
+      stats={statsResult.data} 
+      listings={finalListings} 
+      relatedChapters={stories}
+      isStoryRoute={false}
+    />
+  );
+
 }

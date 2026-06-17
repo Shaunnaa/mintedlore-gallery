@@ -134,9 +134,12 @@ function CreateCommunityForm() {
   };
 
   const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
+  const isGameStory = collectionType === "type_b" && collectionSymbol === "star_atlas";
+
   const canProceedStep2 = 
     collectionType === "type_a" ? collectionAddress.trim().length > 30 :
     collectionType === "type_game" ? collectionSymbol === "star_atlas" :
+    isGameStory ? true :
     collectionAddress.trim().length > 30 && selectedMints.size > 0;
 
   const handleSubmit = async () => {
@@ -363,12 +366,19 @@ function CreateCommunityForm() {
                   <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
                     <p className="text-xs font-semibold text-cyan-400">Parent Collection Auto-linked ✓</p>
                     <p className="mt-1 text-sm text-stone-300">
-                      Loading NFTs from: <strong className="text-white">{collectionSymbol}</strong>
+                      Loading configuration for: <strong className="text-white">{collectionSymbol}</strong>
                     </p>
                   </div>
                 )}
 
-                {nfts.length > 0 && (
+                {isGameStory ? (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
+                    <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">Game Integration Sub-Collection</p>
+                    <p className="mt-3 text-sm text-stone-300">
+                      Game assets will be configured dynamically in the editor after creation.
+                    </p>
+                  </div>
+                ) : nfts.length > 0 && (
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <label className="text-xs font-semibold uppercase tracking-widest text-stone-400">
@@ -445,7 +455,7 @@ function CreateCommunityForm() {
               <button
                 disabled={!canProceedStep2}
                 onClick={() => {
-                  if (collectionType === "type_game") setPreferredView("custom_code");
+                  if (collectionType === "type_game" || isGameStory) setPreferredView("custom_code");
                   setStep(3);
                 }}
                 className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
@@ -459,7 +469,7 @@ function CreateCommunityForm() {
         {/* ── STEP 3: Appearance ── */}
         {step === 3 && (
           <div className="space-y-6">
-            {collectionType === "type_game" ? (
+            {collectionType === "type_game" || isGameStory ? (
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
                 <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">Game Hub Layout</p>
                 <p className="mt-3 text-sm text-stone-300">

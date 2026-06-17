@@ -6,12 +6,16 @@ import type { Community } from "@/lib/communities";
 import { HolderBadge } from "@/components/wallet/HolderBadge";
 import Link from "next/link";
 import { ListingGallery } from "@/components/market/ListingGallery";
+import { TimelineView } from "@/components/templates/TimelineView";
 import type { MagicEdenStats, MagicEdenListing } from "@/services/magicEden";
 
 type StarAtlasHubProps = {
   community: Community;
+  storyCommunity?: Community;
   stats?: MagicEdenStats | null;
   listings: MagicEdenListing[];
+  relatedChapters?: {slug: string; name: string}[];
+  isStoryRoute?: boolean;
 };
 
 // Types based on the actual Star Atlas API (https://galaxy.staratlas.com/nfts)
@@ -33,13 +37,13 @@ type StarAtlasNFT = {
   };
 };
 
-export function StarAtlasHub({ community, stats, listings }: StarAtlasHubProps) {
+export function StarAtlasHub({ community, storyCommunity, stats, listings, relatedChapters = [], isStoryRoute = false }: StarAtlasHubProps) {
   const [items, setItems] = useState<StarAtlasNFT[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"ship" | "resource" | "structure" | "crew" | "all">("ship");
-  const [activeTab, setActiveTab] = useState<string>("stories");
-  const [activeStoryIndex, setActiveStoryIndex] = useState<number>(0);
-  const nftStories = community.themeSettings?.nftStories || [];
+  
+  // We no longer need local tab state for stories since they are fully routed now
+  const [activeTab, setActiveTab] = useState<string>(isStoryRoute ? "stories" : "hub");
 
   useEffect(() => {
     fetch("https://galaxy.staratlas.com/nfts")
@@ -70,7 +74,7 @@ export function StarAtlasHub({ community, stats, listings }: StarAtlasHubProps) 
 
       return () => observer.disconnect();
     }
-  }, [activeTab, activeStoryIndex, nftStories]);
+  }, [activeTab]);
 
   const selectedAssetIds = community.themeSettings?.selectedAssetIds || [];
   
@@ -121,7 +125,7 @@ export function StarAtlasHub({ community, stats, listings }: StarAtlasHubProps) 
         </header>
 
         {/* ── TABS ── */}
-        <div className="flex flex-wrap gap-4 border-b border-white/10 pb-6 mt-6">
+          <div className="flex flex-wrap gap-4 border-b border-white/10 pb-6 mt-6">
             <button 
               onClick={() => setActiveTab("hub")}
               className={`flex items-center gap-3 px-6 py-3 rounded-xl border-2 transition ${activeTab === "hub" ? "bg-cyan-500/10 border-cyan-500 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.2)]" : "border-white/10 text-stone-400 hover:border-white/30"}`}
@@ -135,25 +139,24 @@ export function StarAtlasHub({ community, stats, listings }: StarAtlasHubProps) 
               </span>
             </button>
 
-            <button 
+            <Link 
+              href={`/nft-game/${community.parentCommunityId ? community.parentCommunityId : community.slug}`}
               onClick={() => setActiveTab("nft")}
               className={`flex items-center gap-3 px-6 py-3 rounded-xl border-2 transition ${activeTab === "nft" ? "bg-purple-500/10 border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]" : "border-white/10 text-stone-400 hover:border-white/30"}`}
             >
               <span className="text-sm font-bold uppercase tracking-widest">
                 NFT Gallery
               </span>
-            </button>
+            </Link>
 
-            {nftStories.length > 0 && (
-              <button 
-                onClick={() => setActiveTab("stories")}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl border-2 transition ${activeTab === "stories" ? "bg-emerald-500/10 border-emerald-500 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "border-white/10 text-stone-400 hover:border-white/30"}`}
-              >
-                <span className="text-sm font-bold uppercase tracking-widest">
-                  Story Gallery
-                </span>
-              </button>
-            )}
+            <button 
+              onClick={() => setActiveTab("stories")}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl border-2 transition ${activeTab === "stories" ? "bg-emerald-500/10 border-emerald-500 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "border-white/10 text-stone-400 hover:border-white/30"}`}
+            >
+              <span className="text-sm font-bold uppercase tracking-widest">
+                Story Gallery
+              </span>
+            </button>
           </div>
 
         {/* ── GAME HUB RENDERER ── */}
@@ -218,59 +221,70 @@ export function StarAtlasHub({ community, stats, listings }: StarAtlasHubProps) 
           </div>
         )}
         {/* ── STORY GALLERY RENDERER ── */}
-        {activeTab === "stories" && nftStories.length > 0 && (
+        {activeTab === "stories" && (
           <>
             <div className="mt-4 flex flex-wrap gap-4 border-b border-white/5 pb-6">
-              {nftStories.map((story: any, idx: number) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveStoryIndex(idx)}
-                  className={`rounded-full px-5 py-2 text-sm font-bold uppercase tracking-widest transition-all ${activeStoryIndex === idx ? "bg-emerald-500 text-neutral-950" : "bg-white/5 text-stone-400 hover:bg-white/10 hover:text-white"}`}
+              {/* Render Database Type B stories */}
+              {relatedChapters.length > 0 && relatedChapters.map((story) => (
+                <Link
+                  key={story.slug}
+                  href={`/nft-game/${community.slug}/${story.slug}`}
+                  className={`rounded-full px-5 py-2 text-sm font-bold uppercase tracking-widest transition-all ${isStoryRoute && storyCommunity?.slug === story.slug ? "bg-emerald-500 text-neutral-950" : "bg-white/5 text-stone-400 hover:bg-white/10 hover:text-white"}`}
                 >
-                  {story.name || `Story ${idx + 1}`}
-                </button>
+                  {story.name}
+                </Link>
               ))}
+
+              {relatedChapters.length === 0 && (
+                <div className="text-stone-500">No stories available.</div>
+              )}
             </div>
-            <div className="mt-8 min-h-[600px] w-full rounded-2xl border border-white/10 bg-[#03030c] overflow-hidden">
-              {(() => {
-                const story = nftStories[activeStoryIndex];
-                if (!story) return null;
-                
-                let html = story.html || "";
-                if (story.assetIds && story.assetIds.length > 0) {
-                  story.assetIds.forEach((id, idx) => {
-                    if (!id) return;
-                    const asset = items.find(a => a._id === id);
-                    if (asset) {
-                      // Support 1-based indexing like {{NFT_IMAGE_1}}, {{NFT_IMAGE_2}}
-                      const regexImage = new RegExp(`\\{\\{NFT_IMAGE_${idx + 1}\\}\\}`, 'g');
-                      const regexName = new RegExp(`\\{\\{NFT_NAME_${idx + 1}\\}\\}`, 'g');
-                      html = html.replace(regexImage, asset.image);
-                      html = html.replace(regexName, asset.name);
+
+            {/* If we are actively on a story route, it means the TimelineView or CustomCode should render! */}
+            {isStoryRoute && storyCommunity && storyCommunity.collectionType === "type_b" && (
+              <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="prose prose-invert max-w-none">
+                  {storyCommunity.preferredView === "custom_code" && storyCommunity.themeSettings?.customCode ? (
+                    (() => {
+                      let html = storyCommunity.themeSettings.customCode as string;
+                      const assetIds = storyCommunity.themeSettings.assetIds as string[] | undefined;
                       
-                      // Also replace the base {{NFT_IMAGE}} with the very first asset for backwards compatibility
-                      if (idx === 0) {
-                        html = html.replace(/\{\{NFT_IMAGE\}\}/g, asset.image);
-                        html = html.replace(/\{\{NFT_NAME\}\}/g, asset.name);
+                      // Process template tags just like the legacy code did
+                      if (assetIds && assetIds.length > 0) {
+                        assetIds.forEach((id: string, idx: number) => {
+                          if (!id) return;
+                          const asset = items.find((a: any) => a._id === id);
+                          if (asset) {
+                            const regexImage = new RegExp(`\\{\\{NFT_IMAGE_${idx + 1}\\}\\}`, 'g');
+                            const regexName = new RegExp(`\\{\\{NFT_NAME_${idx + 1}\\}\\}`, 'g');
+                            html = html.replace(regexImage, asset.image);
+                            html = html.replace(regexName, asset.name);
+                            
+                            if (idx === 0) {
+                              html = html.replace(/\{\{NFT_IMAGE\}\}/g, asset.image);
+                              html = html.replace(/\{\{NFT_NAME\}\}/g, asset.name);
+                            }
+                          }
+                        });
                       }
-                    }
-                  });
-                } else if (story.assetId) {
-                  // Backwards compatibility for single assetId
-                  const asset = items.find(a => a._id === story.assetId);
-                  if (asset) {
-                    html = html.replace(/\{\{NFT_IMAGE\}\}/g, asset.image);
-                    html = html.replace(/\{\{NFT_NAME\}\}/g, asset.name);
-                  }
-                }
-                return (
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: html }}
-                    className="story-content-wrapper text-stone-300"
-                  />
-                );
-              })()}
-            </div>
+                      
+                      return (
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: html }}
+                          className="story-content-wrapper text-stone-300"
+                        />
+                      );
+                    })()
+                  ) : storyCommunity.preferredView === "timeline" ? (
+                    <TimelineView community={storyCommunity} items={listings} />
+                  ) : (
+                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center text-emerald-300">
+                      Story content loaded for: {storyCommunity.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 

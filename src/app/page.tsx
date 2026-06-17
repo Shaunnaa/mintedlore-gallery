@@ -7,7 +7,9 @@ export const revalidate = 0; // Ensure fresh data
 export default async function Home() {
   const supabase = getSupabase();
   const { data: records } = await supabase.from("communities").select("*").order("created_at", { ascending: false });
-  const communities = (records || []).map(mapCommunityRecord);
+  const communities = (records || [])
+    .map(mapCommunityRecord)
+    .filter((c) => c.collectionType !== "type_b");
 
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50">
@@ -60,9 +62,6 @@ export default async function Home() {
                 Community Hubs
               </h2>
             </div>
-            <p className="text-sm text-stone-500">
-              Mock database today, Supabase-ready tomorrow.
-            </p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">

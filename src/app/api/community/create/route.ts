@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     if (!ownerWallet || !name || !slug || !collectionType || !collectionAddress) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-    if (collectionType === "type_b" && (!selectedMints || selectedMints.length === 0)) {
+    const isGameStory = collectionType === "type_b" && collectionAddress === "star_atlas";
+    if (collectionType === "type_b" && !isGameStory && (!selectedMints || selectedMints.length === 0)) {
       return NextResponse.json({ error: "Type B requires at least one NFT selected" }, { status: 400 });
     }
     if (collectionType === "type_b" && !parentCommunityId) {

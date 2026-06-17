@@ -129,7 +129,7 @@ export async function fetchTokensByMints(
 ): Promise<ApiResult<MagicEdenListing[]>> {
   try {
     // Fetch all mints in parallel
-    const promises = mints.map(mint => fetchMagicEden<any>(`/tokens/${mint}`));
+    const promises = mints.map(mint => fetchMagicEden<Record<string, unknown>>(`/tokens/${mint}`));
     const results = await Promise.all(promises);
 
     const data: MagicEdenListing[] = [];

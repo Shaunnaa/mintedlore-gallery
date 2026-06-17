@@ -29,11 +29,22 @@ export default async function GamesPage() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  // Fetch child stories to count them
+  const { data: childRecords } = await supabase
+    .from("communities")
+    .select("parent_community_id")
+    .eq("collection_type", "type_b");
+
+  const storyCountsByParent = (childRecords || []).reduce((acc: Record<string, number>, child) => {
+    if (child.parent_community_id) {
+      acc[child.parent_community_id] = (acc[child.parent_community_id] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
   const communities = (records || [])
     .map(mapCommunityRecord)
-    .filter(
-      (c) => c.collectionType === "type_game" || c.collectionAddress === "star_atlas"
-    );
+    .filter((c) => c.collectionType === "type_game");
 
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50">
@@ -84,7 +95,7 @@ export default async function GamesPage() {
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {communities.map((community) => {
                 const meta = getGameMeta(community.collectionAddress);
-                const storyCount = (community.themeSettings?.nftStories ?? []).length;
+                const storyCount = storyCountsByParent[community.id] || 0;
 
                 return (
                   <Link

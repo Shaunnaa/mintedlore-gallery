@@ -134,47 +134,90 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-lg font-semibold text-white">No communities yet</p>
-              <p className="mt-1 text-sm text-stone-500">Create your first Type A community to get started.</p>
+              <p className="mt-1 text-sm text-stone-500">Create your first community to get started.</p>
             </div>
             <Link
               href="/dashboard/create"
               className="rounded-full border border-violet-500/50 bg-violet-500/10 px-6 py-3 text-sm font-bold uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/20"
             >
-              Create Type A Community
+              Create Community
             </Link>
           </div>
         )}
 
-        {/* Type A communities with their Type B children */}
-        {connected && !loading && typeACommunities.length > 0 && (
-          <div className="space-y-8">
-            {typeACommunities.map((typeA) => {
-              const children = typeBCommunities.filter(b => b.parent_community_id === typeA.id);
-              return (
-                <div key={typeA.id}>
-                  {/* Type A parent */}
-                  <CommunityCard community={typeA}>
-                    <div className="mt-4 border-t border-white/5 pt-4">
-                      <Link
-                        href={`/dashboard/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/30 py-2 text-xs font-semibold text-cyan-500 transition hover:border-cyan-400/60 hover:text-cyan-300"
-                      >
-                        + Add Type B Sub-Collection
-                      </Link>
-                    </div>
-                  </CommunityCard>
+        {connected && !loading && (
+          <div className="space-y-16">
+            {/* Game Integrations */}
+            {typeACommunities.filter(c => c.collection_address === "star_atlas").length > 0 && (
+              <div>
+                <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-emerald-400">Game Integrations</h2>
+                <div className="space-y-8">
+                  {typeACommunities.filter(c => c.collection_address === "star_atlas").map((typeA) => {
+                    const children = typeBCommunities.filter(b => b.parent_community_id === typeA.id);
+                    return (
+                      <div key={typeA.id}>
+                        {/* Type A parent */}
+                        <CommunityCard community={typeA}>
+                          <div className="mt-4 border-t border-white/5 pt-4">
+                            <Link
+                              href={`/dashboard/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
+                              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-500/30 py-2 text-xs font-semibold text-emerald-500 transition hover:border-emerald-400/60 hover:text-emerald-300"
+                            >
+                              + Add Story Sub-Collection
+                            </Link>
+                          </div>
+                        </CommunityCard>
 
-                  {/* Type B children indented below */}
-                  {children.length > 0 && (
-                    <div className="ml-8 mt-3 space-y-3 border-l border-cyan-500/20 pl-5">
-                      {children.map(typeB => (
-                        <CommunityCard key={typeB.id} community={typeB} />
-                      ))}
-                    </div>
-                  )}
+                        {/* Type B children indented below */}
+                        {children.length > 0 && (
+                          <div className="ml-8 mt-3 space-y-3 border-l border-emerald-500/20 pl-5">
+                            {children.map(typeB => (
+                              <CommunityCard key={typeB.id} community={typeB} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            )}
+
+            {/* Full Collections */}
+            {typeACommunities.filter(c => c.collection_address !== "star_atlas").length > 0 && (
+              <div>
+                <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-violet-400">Full Collections</h2>
+                <div className="space-y-8">
+                  {typeACommunities.filter(c => c.collection_address !== "star_atlas").map((typeA) => {
+                    const children = typeBCommunities.filter(b => b.parent_community_id === typeA.id);
+                    return (
+                      <div key={typeA.id}>
+                        {/* Type A parent */}
+                        <CommunityCard community={typeA}>
+                          <div className="mt-4 border-t border-white/5 pt-4">
+                            <Link
+                              href={`/dashboard/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
+                              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/30 py-2 text-xs font-semibold text-cyan-500 transition hover:border-cyan-400/60 hover:text-cyan-300"
+                            >
+                              + Add Type B Sub-Collection
+                            </Link>
+                          </div>
+                        </CommunityCard>
+
+                        {/* Type B children indented below */}
+                        {children.length > 0 && (
+                          <div className="ml-8 mt-3 space-y-3 border-l border-cyan-500/20 pl-5">
+                            {children.map(typeB => (
+                              <CommunityCard key={typeB.id} community={typeB} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
