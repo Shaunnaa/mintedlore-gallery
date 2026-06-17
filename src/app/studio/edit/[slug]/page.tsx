@@ -559,7 +559,7 @@ export default function EditCommunityPage() {
                   { value: "timeline1", icon: "📜", label: "Timeline 1",    desc: "Alternating layout" },
                   { value: "timeline2", icon: "🎨", label: "Timeline 2",    desc: "Visual timeline" },
                   { value: "timeline3", icon: "⚡", label: "Timeline 3",    desc: "Progress style" },
-                  { value: "html",      icon: "💻", label: "HTML Code",     desc: "Custom HTML layout" },
+                  { value: "custom_code",      icon: "💻", label: "HTML Code",     desc: "Custom HTML layout" },
                 ].map(v => (
                   <button key={v.value} onClick={() => setPreferredView(v.value)}
                     className={`flex flex-col gap-1 rounded-xl border p-3 text-left transition ${preferredView === v.value ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"}`}>
@@ -572,14 +572,14 @@ export default function EditCommunityPage() {
             </section>
 
             {/* Custom HTML Editor */}
-            {preferredView === "html" && (
+            {preferredView === "custom_code" && (
               <section>
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Story HTML Code</h2>
                 <textarea 
                   rows={12} 
                   spellCheck={false} 
-                  value={customCode} 
-                  onChange={e => setCustomCode(e.target.value)}
+                  value={customHtml} 
+                  onChange={e => setCustomHtml(e.target.value)}
                   placeholder="Write custom HTML here to override the layout..."
                   className="w-full rounded-lg border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs text-violet-300 outline-none focus:border-violet-500/50"
                 />
@@ -641,8 +641,8 @@ export default function EditCommunityPage() {
               <textarea 
                 rows={12} 
                 spellCheck={false} 
-                value={customCode} 
-                onChange={e => setCustomCode(e.target.value)}
+                value={customHtml} 
+                onChange={e => setCustomHtml(e.target.value)}
                 placeholder="Write custom HTML here to override the layout..."
                 className="w-full rounded-lg border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs text-emerald-300 outline-none focus:border-emerald-500/50"
               />

@@ -63,7 +63,10 @@ export async function POST(request: Request) {
         parent_community_id: parentCommunityId || null,
         preferred_view: preferredView ?? "timeline1",
         vip_threshold: vipThreshold ?? 1,
-        theme_settings: meSymbol ? { magicEdenSymbol: meSymbol } : null,
+        theme_settings: {
+          ...(meSymbol ? { magicEdenSymbol: meSymbol } : {}),
+          ...(collectionType === "type_b" && selectedMints ? { assetIds: selectedMints } : {})
+        },
       })
       .select()
       .single();

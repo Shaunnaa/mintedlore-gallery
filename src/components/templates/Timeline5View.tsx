@@ -325,9 +325,14 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
                   {l.image && <Image src={l.image} alt={l.name} fill className="object-cover" unoptimized />}
 
                   {/* Hover overlay with name + price */}
-                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <p className="truncate text-[9px] font-bold text-white">{l.name}</p>
-                    <p className="text-[8px] text-emerald-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</p>
+                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <p className="truncate text-xs font-bold text-white">{l.name}</p>
+                    {community.themeSettings?.assetDescriptions?.[l.tokenMint] && (
+                      <p className="mt-1 line-clamp-3 text-[10px] leading-snug text-stone-300">
+                        {community.themeSettings.assetDescriptions[l.tokenMint]}
+                      </p>
+                    )}
+                    <p className="mt-2 text-[10px] font-semibold text-emerald-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</p>
                   </div>
 
                   {/* Owned badge */}
