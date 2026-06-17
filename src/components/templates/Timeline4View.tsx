@@ -123,14 +123,18 @@ function StoryCard({
             {listing.name}
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-stone-400">
-            In this chapter of the{" "}
-            <span className="font-medium text-stone-200">{community.name}</span>{" "}
-            saga, this legendary piece emerged from the depths of the blockchain.
-            Claimed by{" "}
-            <span className="font-medium" style={{ color: chapter.color }}>
-              {listing.sellerName}
-            </span>
-            , it now awaits its next destined keeper.
+            {community.themeSettings?.assetDescriptions?.[listing.tokenMint] || (
+              <>
+                In this chapter of the{" "}
+                <span className="font-medium text-stone-200">{community.name}</span>{" "}
+                saga, this legendary piece emerged from the depths of the blockchain.
+                Claimed by{" "}
+                <span className="font-medium" style={{ color: chapter.color }}>
+                  {listing.sellerName}
+                </span>
+                , it now awaits its next destined keeper.
+              </>
+            )}
           </p>
 
           <div
@@ -181,6 +185,11 @@ export function Timeline4View({
   statsError?: string | null;
   ownedMints?: string[];
 }) {
+  const isTypeB = community.collectionType === "type_b";
+  const displayListings = isTypeB && community.themeSettings?.assetIds?.length
+    ? community.themeSettings.assetIds.map(id => listings.find(l => l.tokenMint === id)).filter(Boolean) as MagicEdenListing[]
+    : listings;
+
   return (
     <>
       <style>{`
@@ -240,7 +249,7 @@ export function Timeline4View({
         <div className="absolute bottom-0 left-0 top-0 w-px bg-gradient-to-b from-violet-500/60 via-blue-500/30 to-transparent md:left-1/2 md:-ml-px" />
 
         <div className="flex flex-col gap-24">
-          {listings.map((listing, index) => (
+          {displayListings.map((listing, index) => (
             <StoryCard
               key={listing.tokenMint}
               listing={listing}
@@ -250,7 +259,7 @@ export function Timeline4View({
             />
           ))}
 
-          {listings.length === 0 && (
+          {displayListings.length === 0 && (
             <p className="py-20 text-center text-stone-500">
               No chapters available yet — the story is still being written.
             </p>

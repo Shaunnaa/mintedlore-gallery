@@ -148,9 +148,9 @@ export function Sidebar() {
       {connected && (
         <div className={`border-t border-white/10 px-2 py-3`}>
           <Link
-            href="/dashboard"
+            href="/studio"
             title="My Communities"
-            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${pathname.startsWith("/dashboard") ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20" : "text-stone-300 hover:bg-white/5 hover:text-white"} ${collapsed ? "justify-center" : ""}`}
+            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${pathname.startsWith("/studio") ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20" : "text-stone-300 hover:bg-white/5 hover:text-white"} ${collapsed ? "justify-center" : ""}`}
           >
             <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />

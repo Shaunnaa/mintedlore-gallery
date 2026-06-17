@@ -189,7 +189,12 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
     return Math.min(1, ranges.reduce((acc, r) => acc + sceneFade(p, r[0], r[1], edgeFraction), 0));
   };
 
-  const nft = (i: number) => listings[i] ?? null;
+  const isTypeB = community.collectionType === "type_b";
+  const displayListings = isTypeB && community.themeSettings?.assetIds?.length
+    ? community.themeSettings.assetIds.map(id => listings.find(l => l.tokenMint === id)).filter(Boolean) as MagicEdenListing[]
+    : listings;
+
+  const nft = (i: number) => displayListings[i] ?? null;
 
   // Derived parallax values
   const planetSize   = 80  + p * 480;
@@ -308,7 +313,7 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
 
             {/* NFT Grid — full display */}
             <div className="grid grid-cols-4 gap-3 w-full max-w-xl sm:grid-cols-4 md:grid-cols-4">
-              {listings.slice(0, 12).map((l, i) => (
+              {displayListings.slice(0, 12).map((l, i) => (
                 <a
                   key={l.tokenMint}
                   href={`https://magiceden.io/item-details/${l.tokenMint}`}

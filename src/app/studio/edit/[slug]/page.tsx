@@ -158,12 +158,12 @@ export default function EditCommunityPage() {
   const [customHtml, setCustomHtml] = useState("");
   const [customCode, setCustomCode] = useState("");
   const [assetIds, setAssetIds] = useState<string[]>([]);
+  const [assetDescriptions, setAssetDescriptions] = useState<Record<string, string>>({});
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [gameAssets, setGameAssets] = useState<{ _id: string; name: string; image: string }[]>([]);
+  const [magicEdenSymbol, setMagicEdenSymbol] = useState("");
 
-  // Code editor state
-  const [rawJson,   setRawJson]   = useState("");
-  const [jsonError, setJsonError] = useState<string | null>(null);
+  // Remove editMode and JSON editor state
 
   // Load community from API
   useEffect(() => {
@@ -182,11 +182,11 @@ export default function EditCommunityPage() {
           setCustomHtml(ts.customHtml ?? "");
           setCustomCode(ts.customCode ?? "");
           setAssetIds(ts.assetIds ?? []);
+          setAssetDescriptions(ts.assetDescriptions ?? {});
           setSelectedAssetIds(ts.selectedAssetIds ?? []);
-          setRawJson(JSON.stringify(ts, null, 2));
+          setMagicEdenSymbol(ts.magicEdenSymbol ?? "");
         } else {
           setStoryTitle(c.name);
-          setRawJson(JSON.stringify({ primaryColor: "#34d399", backgroundColor: "#050505", story: { title: c.name, scenes: DEFAULT_SCENES } }, null, 2));
         }
         if (c.collection_address === "star_atlas") {
           fetch("https://galaxy.staratlas.com/nfts")
@@ -194,6 +194,21 @@ export default function EditCommunityPage() {
             .then((items: any[]) => {
               const sorted = items.sort((a, b) => a.name.localeCompare(b.name));
               setGameAssets(sorted);
+            })
+            .catch(console.error);
+        } else if (c.collection_type === "type_b" || c.collection_type === "type_a") {
+          fetch(`/api/listings?symbol=${c.collection_address}&limit=100`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && Array.isArray(data.listings)) {
+                setGameAssets(data.listings.map((item: any) => ({
+                  _id: item.tokenMint,
+                  name: item.name,
+                  image: item.image
+                })));
+              } else {
+                setGameAssets([]);
+              }
             })
             .catch(console.error);
         }
@@ -219,20 +234,9 @@ export default function EditCommunityPage() {
     setSaving(true);
     setError(null);
     setSaved(false);
-    setJsonError(null);
 
     let themeSettings: ThemeSettings;
-
-    if (editMode === "code") {
-      // Validate JSON
-      try {
-        themeSettings = JSON.parse(rawJson);
-      } catch (e) {
-        setJsonError("Invalid JSON — please fix the syntax before saving.");
-        setSaving(false);
-        return;
-      }
-    } else if (editMode === "html" || (community.collection_address === "star_atlas" && community.collection_type !== "type_b")) {
+    if (community.collection_address === "star_atlas" && community.collection_type !== "type_b") {
       themeSettings = {
         primaryColor,
         backgroundColor: "#050505",
@@ -250,10 +254,22 @@ export default function EditCommunityPage() {
         customHtml,
         customCode,
         assetIds,
+        assetDescriptions,
         selectedAssetIds,
+        magicEdenSymbol,
+        story: { title: storyTitle, scenes },
       };
     } else {
-      themeSettings = { primaryColor, backgroundColor: "#050505", story: { title: storyTitle, scenes } };
+      themeSettings = {
+        primaryColor,
+        backgroundColor: "#050505",
+        ...(community.theme_settings as object || {}),
+        customCode,
+        assetIds,
+        assetDescriptions,
+        magicEdenSymbol,
+        story: { title: storyTitle, scenes },
+      };
     }
 
     try {
@@ -299,7 +315,7 @@ export default function EditCommunityPage() {
         throw new Error(data.error || "Failed to delete community");
       }
       
-      window.location.href = "/dashboard";
+      window.location.href = "/studio";
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Delete failed");
       setDeleting(false);
@@ -317,11 +333,12 @@ export default function EditCommunityPage() {
   if (!community) return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#07070e] text-white">
       <p className="text-stone-400">Community not found.</p>
-      <Link href="/dashboard" className="text-sm text-violet-400 underline">← Dashboard</Link>
+      <Link href="/studio" className="text-sm text-violet-400 underline">← Studio</Link>
     </div>
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const isTypeA = community.collection_type === "type_a";
   const isTypeB = community.collection_type === "type_b";
   const isGameStory = isTypeB && community.collection_address === "star_atlas";
   const isGame = community.collection_address === "star_atlas" && !isTypeB;
@@ -333,7 +350,7 @@ export default function EditCommunityPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <Link href="/dashboard" className="text-xs text-stone-600 hover:text-stone-400">← My Communities</Link>
+            <Link href="/studio" className="text-xs text-stone-600 hover:text-stone-400">← My Communities</Link>
             <h1 className="mt-2 text-2xl font-black text-white">{community.name}</h1>
             <p className="text-xs text-stone-500">/{community.slug}</p>
           </div>
@@ -351,24 +368,8 @@ export default function EditCommunityPage() {
 
         {error && <div className="mb-6 rounded-lg border border-red-500/30 bg-red-950/20 px-4 py-3 text-sm text-red-300">{error}</div>}
 
-        {/* Mode tabs — No Code / Code Editor */}
+        {/* ══ VISUAL EDITOR ══ */}
         {!isGame && !isGameStory && (
-          <div className="mb-8 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-            {([
-              { id: "visual", icon: "✨", label: "No Code Editor" },
-              { id: "html",   icon: "🌐", label: "HTML Editor" },
-              { id: "code",   icon: "💻", label: "Code Editor" },
-            ] as { id: "visual" | "html" | "code"; icon: string; label: string }[]).map(tab => (
-              <button key={tab.id} onClick={() => setEditMode(tab.id)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold uppercase tracking-widest transition ${editMode === tab.id ? "bg-violet-600 text-white" : "text-stone-500 hover:text-stone-300"}`}>
-                <span>{tab.icon}</span> {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ══ NO CODE EDITOR ══ */}
-        {!isGame && !isGameStory && editMode === "visual" && (
           <div className="space-y-8">
 
             {/* Page Content — name (read-only) + description (editable) */}
@@ -388,9 +389,166 @@ export default function EditCommunityPage() {
                     className="w-full resize-none rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
                     placeholder="Tell visitors what this community is about…" />
                 </div>
+                {isTypeA && (
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Magic Eden Symbol</label>
+                    <input value={magicEdenSymbol}
+                      onChange={e => setMagicEdenSymbol(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
+                      placeholder="e.g. mad_lads" />
+                    <p className="mt-1 text-[10px] text-stone-700">Optional: Used to fetch live market stats and floor price. E.g. "mad_lads"</p>
+                  </div>
+                )}
               </div>
             </section>
 
+
+
+
+
+
+          </div>
+        )}
+
+
+
+        {/* ══ TYPE B EDITOR ══ */}
+        {isTypeB && (
+          <div className="mt-10 space-y-4">
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-emerald-500">Story Editor</h2>
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500">Target Story Assets (Select Multiple)</label>
+              {gameAssets.length > 0 ? (
+                <div className="grid max-h-96 grid-cols-2 gap-3 overflow-y-auto rounded-xl border border-white/10 bg-black/40 p-3 sm:grid-cols-3 md:grid-cols-4">
+                  {gameAssets.map(asset => {
+                    const idx = assetIds.indexOf(asset._id);
+                    const isSelected = idx !== -1;
+                    return (
+                      <button
+                        key={asset._id}
+                        onClick={() => {
+                          setAssetIds(prev => 
+                            isSelected ? prev.filter(id => id !== asset._id) : [...prev, asset._id]
+                          );
+                        }}
+                        className={`group relative overflow-hidden rounded-lg border-2 text-left transition ${isSelected ? "border-emerald-500 bg-emerald-500/10" : "border-white/5 bg-white/5 hover:border-white/20"}`}
+                      >
+                        <div className="aspect-square w-full bg-black/50">
+                          <img src={asset.image} alt={asset.name} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="p-2">
+                          <p className="truncate text-[10px] font-bold text-white">{asset.name}</p>
+                        </div>
+                        {isSelected && (
+                          <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-neutral-950">
+                            {idx + 1}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-white/5 p-4 text-center text-xs text-stone-500">
+                  Loading assets...
+                </div>
+              )}
+              
+              {/* Selected Assets Rearrangement */}
+              {assetIds.length > 0 && (
+                <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                      Selected Assets Order
+                    </label>
+                    <span className="text-xs font-bold text-emerald-500">{assetIds.length} Selected</span>
+                  </div>
+                  <div className="flex flex-col gap-4 mt-4">
+                    {assetIds.map((id, index) => {
+                      const asset = gameAssets.find(a => a._id === id);
+                      if (!asset) return null;
+                      return (
+                        <div key={id} className="flex flex-col gap-2 rounded-lg border border-white/10 bg-black/40 p-3">
+                          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
+                                {index + 1}
+                              </span>
+                              <div className="h-8 w-8 shrink-0 overflow-hidden rounded bg-black/50">
+                                <img src={asset.image} alt={asset.name} className="h-full w-full object-cover" />
+                              </div>
+                              <span className="truncate text-xs font-bold text-white">{asset.name}</span>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  if (index === 0) return;
+                                  setAssetIds(prev => {
+                                    const next = [...prev];
+                                    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                                    return next;
+                                  });
+                                }}
+                                disabled={index === 0}
+                                className="flex h-6 w-6 items-center justify-center rounded bg-white/5 text-stone-400 transition hover:bg-white/10 hover:text-white disabled:opacity-30"
+                                title="Move Up"
+                              >
+                                ↑
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (index === assetIds.length - 1) return;
+                                  setAssetIds(prev => {
+                                    const next = [...prev];
+                                    [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                                    return next;
+                                  });
+                                }}
+                                disabled={index === assetIds.length - 1}
+                                className="flex h-6 w-6 items-center justify-center rounded bg-white/5 text-stone-400 transition hover:bg-white/10 hover:text-white disabled:opacity-30"
+                                title="Move Down"
+                              >
+                                ↓
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAssetIds(prev => prev.filter(a => a !== id));
+                                  setAssetDescriptions(prev => {
+                                    const next = { ...prev };
+                                    delete next[id];
+                                    return next;
+                                  });
+                                }}
+                                className="ml-2 flex h-6 w-6 items-center justify-center rounded bg-red-500/10 text-red-400 transition hover:bg-red-500/20 hover:text-red-300"
+                                title="Remove"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <textarea
+                              rows={2}
+                              value={assetDescriptions[id] || ""}
+                              onChange={(e) => setAssetDescriptions(prev => ({ ...prev, [id]: e.target.value }))}
+                              placeholder="Write a story description for this asset..."
+                              className="w-full resize-none rounded-md border border-white/5 bg-black/20 px-3 py-2 text-[10px] text-stone-300 outline-none focus:border-emerald-500/50"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+            </div>
+          </div>
+        )}
+
+        {/* ══ STYLE AND THEME ══ */}
+        {!isGame && !isGameStory && !isTypeA && (
+          <div className="space-y-8 pt-4">
             {/* Page Style */}
             <section>
               <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Page Style</h2>
@@ -401,6 +559,7 @@ export default function EditCommunityPage() {
                   { value: "timeline1", icon: "📜", label: "Timeline 1",    desc: "Alternating layout" },
                   { value: "timeline2", icon: "🎨", label: "Timeline 2",    desc: "Visual timeline" },
                   { value: "timeline3", icon: "⚡", label: "Timeline 3",    desc: "Progress style" },
+                  { value: "html",      icon: "💻", label: "HTML Code",     desc: "Custom HTML layout" },
                 ].map(v => (
                   <button key={v.value} onClick={() => setPreferredView(v.value)}
                     className={`flex flex-col gap-1 rounded-xl border p-3 text-left transition ${preferredView === v.value ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"}`}>
@@ -411,6 +570,21 @@ export default function EditCommunityPage() {
                 ))}
               </div>
             </section>
+
+            {/* Custom HTML Editor */}
+            {preferredView === "html" && (
+              <section>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Story HTML Code</h2>
+                <textarea 
+                  rows={12} 
+                  spellCheck={false} 
+                  value={customCode} 
+                  onChange={e => setCustomCode(e.target.value)}
+                  placeholder="Write custom HTML here to override the layout..."
+                  className="w-full rounded-lg border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs text-violet-300 outline-none focus:border-violet-500/50"
+                />
+              </section>
+            )}
 
             {/* Accent Color */}
             <section>
@@ -459,233 +633,20 @@ export default function EditCommunityPage() {
           </div>
         )}
 
-        {/* ══ HTML EDITOR ══ */}
-        {!isGameStory && (editMode === "html" || isGame) && (
-          <div className="space-y-4">
-            {isGame && (
-              <div className="mb-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-500">Game Hub Editor</h2>
-                </div>
-                <div className="text-sm text-stone-400">
-                  Game Integrations use dynamic layouts.
-                </div>
-              </div>
-            )}
-
-            {/* Asset Selection */}
-                <div className="mt-10 border-t border-white/10 pt-8">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-500">Display Assets</h2>
-                      <p className="mt-1 text-[10px] text-stone-500">Select specific game assets to display. If none are selected, all assets will be shown.</p>
-                    </div>
-                    {selectedAssetIds.length > 0 && (
-                      <button 
-                        onClick={() => setSelectedAssetIds([])}
-                        className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-white"
-                      >
-                        Clear Selection ({selectedAssetIds.length})
-                      </button>
-                    )}
-                  </div>
-                  
-                  {gameAssets.length > 0 ? (
-                    <div className="grid max-h-96 grid-cols-2 gap-3 overflow-y-auto rounded-xl border border-white/10 bg-black/40 p-3 sm:grid-cols-3 md:grid-cols-4">
-                      {gameAssets.map(asset => {
-                        const isSelected = selectedAssetIds.includes(asset._id);
-                        return (
-                          <button
-                            key={asset._id}
-                            onClick={() => {
-                              setSelectedAssetIds(prev => 
-                                isSelected ? prev.filter(id => id !== asset._id) : [...prev, asset._id]
-                              );
-                            }}
-                            className={`group relative overflow-hidden rounded-lg border-2 text-left transition ${isSelected ? "border-cyan-500 bg-cyan-500/10" : "border-white/5 bg-white/5 hover:border-white/20"}`}
-                          >
-                            <div className="aspect-square w-full bg-black/50">
-                              <img src={asset.image} alt={asset.name} className="h-full w-full object-cover" />
-                            </div>
-                            <div className="p-2">
-                              <p className="truncate text-[10px] font-bold text-white">{asset.name}</p>
-                            </div>
-                            {isSelected && (
-                              <div className="absolute right-1 top-1 rounded-full bg-cyan-500 p-0.5 text-neutral-950">
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="flex h-32 items-center justify-center rounded-xl border border-white/5 bg-black/20">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-                    </div>
-                  )}
-                </div>
-
-            {!isGame && !isGameStory && (
-              <>
-                <div className="flex items-center justify-between rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
-                  <p className="text-xs text-cyan-300">🌐 Write custom HTML. Make sure your Preferred View is set to "Custom (With Code)" to see this.</p>
-                  <button
-                    onClick={() => setCustomHtml(prev => prev + `\n<!-- Magic Eden Marketplace Embed -->\n<div style="width: 100%; height: 800px; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin-top: 40px;">\n  <iframe \n    src="https://play.staratlas.com/market" \n    width="100%" \n    height="100%" \n    frameborder="0"\n    allow="fullscreen"\n  ></iframe>\n</div>\n`)}
-                    className="rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/40"
-                  >
-                    + Insert Marketplace NFT Demo
-                  </button>
-                </div>
-                <textarea rows={22} spellCheck={false} value={customHtml} onChange={e => setCustomHtml(e.target.value)}
-                  placeholder="<div class='text-white'>Hello Web3!</div>"
-                  className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs leading-relaxed text-emerald-300 outline-none focus:border-cyan-500/50" />
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ══ TYPE B EDITOR ══ */}
+        {/* ══ GAME NFT HTML EDITOR ══ */}
         {isGameStory && (
-          <div className="space-y-4">
-            <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-emerald-500">Story Editor</h2>
-            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-500">Target Game Assets (Select Multiple)</label>
-              {gameAssets.length > 0 ? (
-                <div className="grid max-h-96 grid-cols-2 gap-3 overflow-y-auto rounded-xl border border-white/10 bg-black/40 p-3 sm:grid-cols-3 md:grid-cols-4">
-                  {gameAssets.map(asset => {
-                    const idx = assetIds.indexOf(asset._id);
-                    const isSelected = idx !== -1;
-                    return (
-                      <button
-                        key={asset._id}
-                        onClick={() => {
-                          setAssetIds(prev => 
-                            isSelected ? prev.filter(id => id !== asset._id) : [...prev, asset._id]
-                          );
-                        }}
-                        className={`group relative overflow-hidden rounded-lg border-2 text-left transition ${isSelected ? "border-emerald-500 bg-emerald-500/10" : "border-white/5 bg-white/5 hover:border-white/20"}`}
-                      >
-                        <div className="aspect-square w-full bg-black/50">
-                          <img src={asset.image} alt={asset.name} className="h-full w-full object-cover" />
-                        </div>
-                        <div className="p-2">
-                          <p className="truncate text-[10px] font-bold text-white">{asset.name}</p>
-                        </div>
-                        {isSelected && (
-                          <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-neutral-950">
-                            {idx + 1}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-white/5 p-4 text-center text-xs text-stone-500">
-                  Loading game assets...
-                </div>
-              )}
-              
-              {/* Selected Assets Rearrangement */}
-              {assetIds.length > 0 && (
-                <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                      Selected Assets Order
-                    </label>
-                    <span className="text-xs font-bold text-emerald-500">{assetIds.length} Selected</span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {assetIds.map((id, index) => {
-                      const asset = gameAssets.find(a => a._id === id);
-                      if (!asset) return null;
-                      return (
-                        <div key={id} className="flex items-center justify-between rounded-lg border border-white/10 bg-black/40 p-2">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
-                              {index + 1}
-                            </span>
-                            <div className="h-8 w-8 shrink-0 overflow-hidden rounded bg-black/50">
-                              <img src={asset.image} alt={asset.name} className="h-full w-full object-cover" />
-                            </div>
-                            <span className="truncate text-xs font-bold text-white">{asset.name}</span>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              onClick={() => {
-                                if (index === 0) return;
-                                setAssetIds(prev => {
-                                  const next = [...prev];
-                                  [next[index - 1], next[index]] = [next[index], next[index - 1]];
-                                  return next;
-                                });
-                              }}
-                              disabled={index === 0}
-                              className="flex h-6 w-6 items-center justify-center rounded bg-white/5 text-stone-400 transition hover:bg-white/10 hover:text-white disabled:opacity-30"
-                              title="Move Up"
-                            >
-                              ↑
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (index === assetIds.length - 1) return;
-                                setAssetIds(prev => {
-                                  const next = [...prev];
-                                  [next[index + 1], next[index]] = [next[index], next[index + 1]];
-                                  return next;
-                                });
-                              }}
-                              disabled={index === assetIds.length - 1}
-                              className="flex h-6 w-6 items-center justify-center rounded bg-white/5 text-stone-400 transition hover:bg-white/10 hover:text-white disabled:opacity-30"
-                              title="Move Down"
-                            >
-                              ↓
-                            </button>
-                            <button
-                              onClick={() => {
-                                setAssetIds(prev => prev.filter(a => a !== id));
-                              }}
-                              className="ml-2 flex h-6 w-6 items-center justify-center rounded bg-red-500/10 text-red-400 transition hover:bg-red-500/20 hover:text-red-300"
-                              title="Remove"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              
-              <label className="mt-6 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Story HTML Code</label>
+          <div className="space-y-8 pt-4">
+            <section>
+              <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-emerald-500">Story HTML Code</h2>
               <textarea 
                 rows={12} 
                 spellCheck={false} 
                 value={customCode} 
                 onChange={e => setCustomCode(e.target.value)}
+                placeholder="Write custom HTML here to override the layout..."
                 className="w-full rounded-lg border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs text-emerald-300 outline-none focus:border-emerald-500/50"
               />
-              <p className="text-[10px] text-stone-500">Use {'{{NFT_IMAGE_1}}'} and {'{{NFT_NAME_1}}'} to inject the assets selected above based on their numbered order.</p>
-            </div>
-          </div>
-        )}
-
-        {/* ══ JSON EDITOR ══ */}
-        {!isGame && !isGameStory && editMode === "code" && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-300">
-              💻 Edit raw <code className="rounded bg-amber-900/30 px-1">theme_settings</code> JSON for full control. Invalid JSON will not save.
-            </div>
-            <textarea rows={22} spellCheck={false} value={rawJson} onChange={e => setRawJson(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-4 font-mono text-xs leading-relaxed text-emerald-300 outline-none focus:border-amber-500/50" />
-            {jsonError && <p className="text-xs text-red-400">⚠ {jsonError}</p>}
-            <p className="text-[10px] text-stone-600">
-              Valid scene types: <code>space</code> · <code>village</code> · <code>launch</code> · <code>travel</code> · <code>arrival</code>
-            </p>
+            </section>
           </div>
         )}
 

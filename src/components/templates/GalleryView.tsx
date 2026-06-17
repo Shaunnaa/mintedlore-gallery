@@ -23,12 +23,14 @@ export function GalleryView({
 }: GalleryViewProps) {
   return (
     <div className="flex flex-col gap-8">
-      <StatsCard
-        floorPrice={stats?.floorPrice}
-        totalVolume={stats?.volumeAll}
-        listedCount={stats?.listedCount}
-        error={statsError}
-      />
+      {(stats || statsError) && (
+        <StatsCard
+          floorPrice={stats?.floorPrice}
+          totalVolume={stats?.volumeAll}
+          listedCount={stats?.listedCount}
+          error={statsError}
+        />
+      )}
 
       <ListingGallery
         listings={listings}

@@ -14,7 +14,14 @@ export function Timeline2View({
   listings: MagicEdenListing[];
   ownedMints?: string[];
 }) {
-  const heroListing = listings[0]; // Using the first listing as the hero
+  const isTypeB = community.collectionType === "type_b";
+  const displayListings = isTypeB && community.themeSettings?.assetIds?.length
+    ? community.themeSettings.assetIds.map(id => listings.find(l => l.tokenMint === id)).filter(Boolean) as MagicEdenListing[]
+    : listings;
+
+  const heroListing = displayListings[0]; // Using the first listing as the hero
+
+  const description = community.themeSettings?.assetDescriptions?.[heroListing?.tokenMint || ""] || community.description;
 
   return (
     <div className="mx-auto max-w-3xl py-12">
@@ -56,7 +63,7 @@ export function Timeline2View({
           <h1 className="text-4xl font-extrabold text-white md:text-5xl lg:text-6xl">
             {community.name}
           </h1>
-          <p className="mt-6 text-lg text-stone-400">{community.description}</p>
+          <p className="mt-6 text-lg text-stone-400">{description}</p>
         </header>
 
         <div className="space-y-8 text-lg leading-relaxed text-stone-300">

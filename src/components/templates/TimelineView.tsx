@@ -25,20 +25,35 @@ export function TimelineView({
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const { selectedCurrency, setSelectedCurrency, formatValue } = useCurrencyConverter();
 
+  const isTypeB = community.collectionType === "type_b";
+  const displayListings = isTypeB && community.themeSettings?.assetIds?.length
+    ? community.themeSettings.assetIds.map(id => listings.find(l => l.tokenMint === id)).filter(Boolean) as MagicEdenListing[]
+    : listings;
+
   return (
     <div className="flex flex-col gap-12">
-      <section className="border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 md:p-8">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-300">
-          Timeline View
-        </p>
-        <h2 className="mt-2 text-3xl font-semibold text-white md:text-4xl">
-          {community.name} Story
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300 md:text-base md:leading-7">
-          {community.description}
-        </p>
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0a0a0f] p-8 shadow-2xl shadow-emerald-900/10 md:p-12 lg:p-16">
+        {/* Glow effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px]" />
+        
+        {/* Decorative Grid Pattern */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBMMDAgMEw0MCAwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4wMikiIHN0cm9rZS13aWR0aD0iMSIvPgo8L3N2Zz4=')] opacity-50" />
 
-
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400 backdrop-blur-md">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Timeline View
+          </p>
+          <h2 className="mt-6 text-4xl font-extrabold tracking-tight text-white md:text-5xl lg:text-7xl">
+            {community.name} <span className="text-stone-600">Story</span>
+          </h2>
+          {community.description && (
+            <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-stone-300 md:text-lg">
+              {community.description}
+            </p>
+          )}
+        </div>
       </section>
 
       <section className="relative mx-auto w-full max-w-4xl py-12">
@@ -46,7 +61,7 @@ export function TimelineView({
         <div className="absolute bottom-0 left-6 top-0 w-px bg-white/10 md:left-1/2 md:-ml-px" />
 
         <div className="flex flex-col gap-12">
-          {listings.map((listing, index) => {
+          {displayListings.map((listing, index) => {
             const isEven = index % 2 === 0;
             const isOwned = ownedMints.includes(listing.tokenMint);
 
@@ -146,7 +161,9 @@ export function TimelineView({
                             {listing.name}
                           </h3>
                           <p className="mt-2 text-sm leading-relaxed text-stone-400">
-                            A highly sought-after asset from the <span className="text-stone-300">{community.name}</span> collection. This premium listing was placed on the open market by <span className="font-medium text-emerald-200/80">{listing.sellerName}</span>.
+                            {community.themeSettings?.assetDescriptions?.[listing.tokenMint] || (
+                              <>A highly sought-after asset from the <span className="text-stone-300">{community.name}</span> collection. This premium listing was placed on the open market by <span className="font-medium text-emerald-200/80">{listing.sellerName}</span>.</>
+                            )}
                           </p>
                           <button
                             onClick={() => setSelectedToken(listing.tokenMint)}
@@ -163,7 +180,7 @@ export function TimelineView({
             );
           })}
 
-          {listings.length === 0 && (
+          {displayListings.length === 0 && (
             <p className="text-center text-sm text-stone-500 py-10">
               No NFT timeline data available.
             </p>

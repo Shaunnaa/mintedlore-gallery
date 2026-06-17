@@ -162,7 +162,7 @@ function CreateCommunityForm() {
       };
       const res = await fetch("/api/community/create", { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" } });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed to create");
-      router.push("/dashboard");
+      router.push("/studio");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -176,7 +176,7 @@ function CreateCommunityForm() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#07070e] text-white">
         <p className="text-stone-400">Please connect your wallet to create a community.</p>
-        <Link href="/dashboard" className="text-sm text-violet-400 underline">← Back to Dashboard</Link>
+        <Link href="/studio" className="text-sm text-violet-400 underline">← Back to Studio</Link>
       </main>
     );
   }
@@ -186,8 +186,8 @@ function CreateCommunityForm() {
       <div className="mx-auto max-w-2xl px-5 py-12 sm:px-8">
 
         {/* Header */}
-        <Link href="/dashboard" className="mb-8 inline-flex items-center gap-2 text-xs text-stone-500 hover:text-stone-300">
-          ← Back to Dashboard
+        <Link href="/studio" className="mb-8 inline-flex items-center gap-2 text-xs text-stone-500 hover:text-stone-300">
+          ← Back to Studio
         </Link>
         <h1 className="mt-2 text-3xl font-black text-white">Create Community</h1>
 

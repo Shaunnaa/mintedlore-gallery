@@ -21,6 +21,11 @@ export function Timeline3View({
     borderStyle: "rounded-none"
   };
 
+  const isTypeB = community.collectionType === "type_b";
+  const displayListings = isTypeB && community.themeSettings?.assetIds?.length
+    ? community.themeSettings.assetIds.map(id => listings.find(l => l.tokenMint === id)).filter(Boolean) as MagicEdenListing[]
+    : listings;
+
   return (
     <div 
       className={`relative w-full py-10 font-mono bg-brand-bg`}
@@ -35,7 +40,7 @@ export function Timeline3View({
       <div className="absolute left-6 top-0 h-32 w-[2px] bg-gradient-to-b from-transparent via-brand to-transparent shadow-[0_0_10px_var(--brand)] md:left-1/2 md:-ml-[1px]" />
 
       <div className="flex flex-col gap-28">
-        {listings.map((listing, index) => {
+        {displayListings.map((listing, index) => {
           const isEven = index % 2 === 0;
           const isOwned = ownedMints.includes(listing.tokenMint);
 
@@ -100,9 +105,13 @@ export function Timeline3View({
                   </div>
 
                   <p className="font-mono text-sm leading-relaxed text-stone-300">
-                    A highly sought-after asset from the {community.name}{" "}
-                    collection. This premium listing was placed on the open
-                    market by {listing.sellerName}.
+                    {community.themeSettings?.assetDescriptions?.[listing.tokenMint] || (
+                      <>
+                        A highly sought-after asset from the {community.name}{" "}
+                        collection. This premium listing was placed on the open
+                        market by {listing.sellerName}.
+                      </>
+                    )}
                   </p>
 
                   <div className="mt-8 border-t border-white/10 pt-6">
@@ -134,7 +143,7 @@ export function Timeline3View({
           );
         })}
 
-        {listings.length === 0 && (
+        {displayListings.length === 0 && (
           <p className="py-10 text-center font-mono text-sm text-stone-500">
             [ NO_ACTIVE_LISTINGS_FOUND ]
           </p>

@@ -55,7 +55,7 @@ function CommunityCard({ community, children }: { community: any, children?: Rea
             View Page →
           </Link>
           <Link
-            href={`/dashboard/edit/${community.slug}`}
+            href={`/studio/edit/${community.slug}`}
             className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs font-semibold text-stone-300 transition hover:border-white/30 hover:text-white"
           >
             Edit
@@ -69,7 +69,7 @@ function CommunityCard({ community, children }: { community: any, children?: Rea
   );
 }
 
-export default function DashboardPage() {
+export default function StudioPage() {
   const { connected, publicKey } = useWallet();
   const [typeACommunities, setTypeACommunities] = useState<Community[]>([]);
   const [typeBCommunities, setTypeBCommunities] = useState<Community[]>([]);
@@ -97,13 +97,13 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-12 flex items-start justify-between gap-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-400">Owner Dashboard</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-400">Creator Studio</p>
             <h1 className="mt-3 text-4xl font-black text-white">My Collections</h1>
             <p className="mt-2 text-sm text-stone-400">Create and manage your NFT gallery collections.</p>
           </div>
           {connected && (
             <Link
-              href="/dashboard/create"
+              href="/studio/create"
               className="flex items-center gap-2 rounded-full border border-violet-500/50 bg-violet-500/10 px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-violet-300 shadow-[0_0_20px_rgba(139,92,246,0.2)] transition hover:bg-violet-500/20"
             >
               <span>+</span> New Community
@@ -137,7 +137,7 @@ export default function DashboardPage() {
               <p className="mt-1 text-sm text-stone-500">Create your first community to get started.</p>
             </div>
             <Link
-              href="/dashboard/create"
+              href="/studio/create"
               className="rounded-full border border-violet-500/50 bg-violet-500/10 px-6 py-3 text-sm font-bold uppercase tracking-widest text-violet-300 transition hover:bg-violet-500/20"
             >
               Create Community
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                         <CommunityCard community={typeA}>
                           <div className="mt-4 border-t border-white/5 pt-4">
                             <Link
-                              href={`/dashboard/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
+                              href={`/studio/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
                               className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-500/30 py-2 text-xs font-semibold text-emerald-500 transition hover:border-emerald-400/60 hover:text-emerald-300"
                             >
                               + Add Story Sub-Collection
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                         <CommunityCard community={typeA}>
                           <div className="mt-4 border-t border-white/5 pt-4">
                             <Link
-                              href={`/dashboard/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
+                              href={`/studio/create?type=b&parent=${typeA.id}&symbol=${typeA.collection_address}`}
                               className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/30 py-2 text-xs font-semibold text-cyan-500 transition hover:border-cyan-400/60 hover:text-cyan-300"
                             >
                               + Add Type B Sub-Collection

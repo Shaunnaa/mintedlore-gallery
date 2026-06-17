@@ -15,16 +15,20 @@ import { getCollectionAssets } from "@/services/metaplex";
 
 type GroupPageProps = {
   params: Promise<{
-    group_slug: string;
+    slug: string[];
   }>;
 };
 
 export const revalidate = 0; // Ensure fresh data
 
 export default async function GroupPage({ params }: GroupPageProps) {
-  const { group_slug } = await params;
+  const { slug } = await params;
+  if (!slug || slug.length === 0 || slug.length > 2) return null;
+
+  const targetSlug = slug[slug.length - 1];
+
   const supabase = getSupabase();
-  const { data: record } = await supabase.from("communities").select("*").eq("slug", group_slug).maybeSingle();
+  const { data: record } = await supabase.from("communities").select("*").eq("slug", targetSlug).maybeSingle();
   const community = record ? mapCommunityRecord(record) : undefined;
 
   if (!community) {
@@ -54,12 +58,21 @@ export default async function GroupPage({ params }: GroupPageProps) {
   // Fetch related chapters (stories) for this collection
   const { data: relatedRecords } = await supabase
     .from("communities")
-    .select("slug, name, collection_type, preferred_view")
+    .select("slug, name, description, collection_type, preferred_view")
     .eq("collection_address", community.collectionAddress)
     .order("id");
 
+  // Determine parent slug for building nested routes
+  const parentRecord = relatedRecords?.find(r => r.collection_type === "type_a");
+  const parentSlug = parentRecord?.slug || community.slug;
+
+  // Redirect if someone visits a child directly at the root (e.g., /fox-2 -> /fox/fox-2)
+  if (slug.length === 1 && community.collectionType === "type_b" && parentSlug !== community.slug) {
+    redirect(`/${parentSlug}/${community.slug}`);
+  }
+
   const relatedChapters = relatedRecords ? relatedRecords.map(r => ({
-    slug: r.slug,
+    slug: r.collection_type === "type_a" ? r.slug : `${parentSlug}/${r.slug}`,
     name: r.name,
     type: r.collection_type,
     view: r.preferred_view
@@ -99,7 +112,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
         }));
       }
     } else {
-      statsData = { floorPrice: 0, listedCount: finalListings.length };
+      statsData = null;
     }
   } else {
     // Legacy fallback using Magic Eden for both assets and stats
@@ -162,7 +175,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 Verified On-Chain Community
               </p>
               <h1 className="mt-3 flex flex-wrap items-center text-4xl font-semibold tracking-normal text-white sm:text-6xl">
-                {community.name}
+                {parentRecord?.name || community.name}
                 <HolderBadge
                   collectionAddress={community.collectionAddress}
                   communitySlug={community.slug}
@@ -170,7 +183,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 />
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-stone-300">
-                {community.description}
+                {parentRecord?.description || community.description}
               </p>
             </div>
 

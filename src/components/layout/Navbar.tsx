@@ -32,7 +32,7 @@ export function Navbar() {
         {/* Owner Dashboard — only visible when wallet is connected */}
         {connected && (
           <Link
-            href="/dashboard"
+            href="/studio"
             className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 transition hover:border-white/20 hover:text-white sm:flex"
           >
             {/* Grid icon */}

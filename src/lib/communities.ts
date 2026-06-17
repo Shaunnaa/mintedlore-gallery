@@ -5,7 +5,7 @@ export type CommunityView =
   | "timeline4"
   | "timeline5"
   | "gallery"
-  | "custom_nocode"   // Visual editor — configured via /dashboard/edit
+  | "custom_nocode"   // Visual editor — configured via /studio/edit
   | "custom_code";    // Code editor — owner writes raw theme_settings JSON
 
 export type StoryScene = {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { GalleryView } from "@/components/templates/GalleryView";
@@ -62,29 +63,62 @@ export function CommunityViewSwitcher({
   }, [connected, publicKey, community.collectionAddress, community.slug]);
 
   const view = community.preferredView;
+  // Type A defaults to gallery, Type B defaults to story
+  const [activeTab, setActiveTab] = useState<"gallery" | "story">(community.collectionType === "type_b" ? "story" : "gallery");
 
   return (
     <CurrencyProvider>
+      {/* ── Unified Gallery / Stories Navigation ── */}
       {relatedChapters.length > 0 && (
         <div className="mb-10 flex flex-wrap justify-center gap-3">
-          {relatedChapters.map((chapter) => (
-            <a
-              key={chapter.slug}
-              href={`/${chapter.slug}`}
-              className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold tracking-wide transition-all shadow-inner ${
-                community.slug === chapter.slug
-                  ? "bg-emerald-500/10 text-emerald-300 shadow-emerald-500/20 ring-1 ring-emerald-500/40"
-                  : "bg-[#0a0a0f] text-stone-400 ring-1 ring-white/10 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              {chapter.view === "gallery" ? "🖼️" : "📖"} {chapter.name}
-            </a>
-          ))}
+          {/* Gallery Button */}
+          <a
+            href={`/${relatedChapters.find(c => c.type === 'type_a')?.slug || community.slug}`}
+            onClick={(e) => {
+              if (community.collectionType === "type_a") {
+                e.preventDefault();
+                setActiveTab("gallery");
+              }
+            }}
+            className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold tracking-wide transition-all shadow-inner ${
+              community.collectionType === "type_a" && activeTab === "gallery"
+                ? "bg-emerald-500/10 text-emerald-300 shadow-emerald-500/20 ring-1 ring-emerald-500/40"
+                : "bg-[#0a0a0f] text-stone-400 ring-1 ring-white/10 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            🖼️ Gallery
+          </a>
+
+          {/* Story Buttons (Only Sub-Collections) */}
+          {relatedChapters
+            .filter((chapter) => chapter.type !== "type_a")
+            .map((chapter) => {
+            const isCurrentPage = chapter.slug.endsWith(community.slug);
+
+            return (
+              <a
+                key={chapter.slug}
+                href={`/${chapter.slug}`}
+                className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold tracking-wide transition-all shadow-inner ${
+                  isCurrentPage
+                    ? "bg-emerald-500/10 text-emerald-300 shadow-emerald-500/20 ring-1 ring-emerald-500/40"
+                    : "bg-[#0a0a0f] text-stone-400 ring-1 ring-white/10 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                📖 {chapter.name}
+              </a>
+            );
+          })}
         </div>
       )}
 
+      {/* ── Secondary view (gallery fallback) ────────────────────────────── */}
+      {activeTab === "gallery" && (
+        <GalleryView community={community} stats={stats} listings={listings} statsError={statsError} listingsError={listingsError} ownedMints={ownedMints} />
+      )}
+
       {/* ── Primary view (timeline / custom) ─────────────────────────────── */}
-      {view !== "gallery" && (
+      {activeTab === "story" && (
         <div className="mb-16">
           {view === "timeline1" && (
             <Timeline1View community={community} stats={stats} listings={listings} statsError={statsError} ownedMints={ownedMints} />

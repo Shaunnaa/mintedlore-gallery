@@ -85,7 +85,7 @@ export default async function GamesPage() {
               <span className="text-5xl">🎮</span>
               <p className="mt-4 text-stone-500">No game communities found yet.</p>
               <Link
-                href="/dashboard/create"
+                href="/studio/create"
                 className="mt-6 rounded-full bg-cyan-500 px-5 py-2 text-sm font-semibold text-neutral-950 hover:bg-cyan-400"
               >
                 Create a Game Community
