@@ -106,23 +106,39 @@ export default async function NftGalleryPage() {
                         <>
                           <p className="mb-3 shrink-0 text-center text-[10px] font-bold uppercase tracking-widest text-emerald-400">Stories</p>
                           <div className="grid grid-cols-2 gap-2">
-                            {children.slice(0, children.length > 6 ? 5 : 6).map(child => (
-                              <Link
-                                key={child.id}
-                                href={`/${community.slug}/${child.slug}`}
-                                className="flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
-                              >
-                                <span className="truncate text-xs font-semibold text-stone-200">{child.name}</span>
-                              </Link>
-                            ))}
-                            {children.length > 6 && (
-                              <Link
-                                href={`/${community.slug}`}
-                                className="flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
-                              >
-                                <span className="truncate text-xs font-bold text-emerald-400">See More →</span>
-                              </Link>
-                            )}
+                            {(() => {
+                              const showSeeMore = children.length > 6;
+                              const displayedChildren = children.slice(0, showSeeMore ? 5 : 6);
+                              const emptySlotsCount = 6 - displayedChildren.length - (showSeeMore ? 1 : 0);
+
+                              return (
+                                <>
+                                  {displayedChildren.map(child => (
+                                    <Link
+                                      key={child.id}
+                                      href={`/${community.slug}/${child.slug}`}
+                                      className="flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
+                                    >
+                                      <span className="truncate text-sm font-semibold text-stone-200">{child.name}</span>
+                                    </Link>
+                                  ))}
+                                  {showSeeMore && (
+                                    <Link
+                                      href={`/${community.slug}`}
+                                      className="flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
+                                    >
+                                      <span className="truncate text-sm font-bold text-emerald-400">See More →</span>
+                                    </Link>
+                                  )}
+                                  {emptySlotsCount > 0 && Array.from({ length: emptySlotsCount }).map((_, i) => (
+                                    <div
+                                      key={`empty-${i}`}
+                                      className="rounded-lg border border-white/5 border-dashed bg-white/[0.01] px-3 py-2.5"
+                                    />
+                                  ))}
+                                </>
+                              );
+                            })()}
                           </div>
                         </>
                       ) : (
