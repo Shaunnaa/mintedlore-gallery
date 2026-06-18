@@ -14,7 +14,7 @@ export async function PUT(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { ownerWallet, themeSettings, preferredView, name, description } =
+    const { ownerWallet, themeSettings, preferredView, name, description, vipThreshold, image } =
       await request.json();
 
     if (!ownerWallet) {
@@ -43,6 +43,8 @@ export async function PUT(
     if (preferredView  !== undefined) updates.preferred_view = preferredView;
     if (name           !== undefined) updates.name = name;
     if (description    !== undefined) updates.description = description;
+    if (vipThreshold   !== undefined) updates.vip_threshold = vipThreshold;
+    if (image          !== undefined) updates.image = image;
 
     const { data, error } = await supabase
       .from("communities")

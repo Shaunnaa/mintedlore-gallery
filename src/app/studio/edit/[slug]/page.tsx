@@ -26,6 +26,8 @@ type ThemeSettings = {
   customCode?: string;
   assetIds?: string[];
   selectedAssetIds?: string[];
+  assetDescriptions?: Record<string, string>;
+  magicEdenSymbol?: string;
 };
 
 type Community = {
@@ -38,6 +40,7 @@ type Community = {
   description: string;
   theme_settings: ThemeSettings | null;
   owner_wallet: string;
+  vip_threshold: number;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -162,6 +165,8 @@ export default function EditCommunityPage() {
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [gameAssets, setGameAssets] = useState<{ _id: string; name: string; image: string }[]>([]);
   const [magicEdenSymbol, setMagicEdenSymbol] = useState("");
+  const [vipThreshold, setVipThreshold] = useState(1);
+  const [coverImage, setCoverImage] = useState("");
 
   // Remove editMode and JSON editor state
 
@@ -174,6 +179,8 @@ export default function EditCommunityPage() {
         const c: Community = data.community;
         setCommunity(c);
         setPreferredView(c.preferred_view ?? "timeline5");
+        setCoverImage(c.image === "/window.svg" ? "" : c.image);
+        setVipThreshold(c.vip_threshold ?? 1);
         const ts = c.theme_settings;
         if (ts) {
           setPrimaryColor(ts.primaryColor ?? "#34d399");
@@ -280,6 +287,8 @@ export default function EditCommunityPage() {
           ownerWallet: publicKey.toBase58(),
           preferredView,
           description: community.description,
+          vipThreshold,
+          image: coverImage || null,
           themeSettings,
         }),
       });
@@ -368,39 +377,60 @@ export default function EditCommunityPage() {
 
         {error && <div className="mb-6 rounded-lg border border-red-500/30 bg-red-950/20 px-4 py-3 text-sm text-red-300">{error}</div>}
 
+        {/* ══ GLOBAL PAGE CONTENT ══ */}
+        <section className="mb-8">
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-stone-500">Page Content</h2>
+          <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.02] p-5">
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Community Name</label>
+              <input readOnly value={community.name}
+                className="w-full rounded-lg border border-white/5 bg-black/30 px-4 py-2.5 text-sm text-stone-500 outline-none cursor-not-allowed" />
+              <p className="mt-1 text-[10px] text-stone-700">Name is fixed at creation.</p>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Description</label>
+              <textarea rows={3} value={community.description ?? ""}
+                onChange={e => setCommunity(prev => prev ? { ...prev, description: e.target.value } : prev)}
+                className="w-full resize-none rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
+                placeholder="Tell visitors what this community is about…" />
+            </div>
+            {!isTypeB && (
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-emerald-500">VIP Threshold</label>
+                <input type="number" min="1" value={vipThreshold}
+                  onChange={e => setVipThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50" />
+                <p className="mt-1 text-[10px] text-stone-500">Number of NFTs required to access VIP perks.</p>
+              </div>
+            )}
+            {!isTypeB && !isGameStory && (
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Cover Image URL</label>
+                <input value={coverImage}
+                  onChange={e => setCoverImage(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
+                  placeholder="e.g. https://.../image.png" />
+                <p className="mt-1 text-[10px] text-stone-700">Optional: Used as the thumbnail on the Gallery page.</p>
+              </div>
+            )}
+            {isTypeA && (
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Magic Eden Symbol <span className="text-stone-500 font-normal">(* Tensor soon)</span></label>
+                <input value={magicEdenSymbol}
+                  onChange={e => setMagicEdenSymbol(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
+                  placeholder="e.g. mad_lads" />
+                <p className="mt-1 text-[10px] text-stone-700">Optional: Used to fetch live market stats and floor price. E.g. "mad_lads"</p>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* ══ VISUAL EDITOR ══ */}
         {!isGame && !isGameStory && (
           <div className="space-y-8">
 
-            {/* Page Content — name (read-only) + description (editable) */}
-            <section>
-              <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-stone-500">Page Content</h2>
-              <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.02] p-5">
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Community Name</label>
-                  <input readOnly value={community.name}
-                    className="w-full rounded-lg border border-white/5 bg-black/30 px-4 py-2.5 text-sm text-stone-500 outline-none cursor-not-allowed" />
-                  <p className="mt-1 text-[10px] text-stone-700">Name is fixed at creation.</p>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Description</label>
-                  <textarea rows={3} value={community.description ?? ""}
-                    onChange={e => setCommunity(prev => prev ? { ...prev, description: e.target.value } : prev)}
-                    className="w-full resize-none rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
-                    placeholder="Tell visitors what this community is about…" />
-                </div>
-                {isTypeA && (
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Magic Eden Symbol</label>
-                    <input value={magicEdenSymbol}
-                      onChange={e => setMagicEdenSymbol(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-violet-500/50"
-                      placeholder="e.g. mad_lads" />
-                    <p className="mt-1 text-[10px] text-stone-700">Optional: Used to fetch live market stats and floor price. E.g. "mad_lads"</p>
-                  </div>
-                )}
-              </div>
-            </section>
+
 
 
 

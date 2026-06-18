@@ -75,24 +75,32 @@ function CreateCommunityForm() {
     }
   }, [collectionAddress, collectionSymbol]);
 
-  const previewCollection = async () => {
-    if (!collectionSymbol) return;
-    setPreviewLoading(true);
-    try {
-      const res = await fetch(`/api/stats?symbol=${collectionSymbol}`);
-      const data = await res.json();
-      
-      if (data.stats) {
-        setPreview({ floor: data.stats.floorPrice ? data.stats.floorPrice / 1e9 : 0, count: data.stats.listedCount ?? 0 });
-      } else {
-        setPreview(null);
-      }
-    } catch {
+  useEffect(() => {
+    if (!collectionSymbol) {
       setPreview(null);
-    } finally {
-      setPreviewLoading(false);
+      return;
     }
-  };
+    const fetchPreview = async () => {
+      setPreviewLoading(true);
+      try {
+        const res = await fetch(`/api/stats?symbol=${collectionSymbol}`);
+        const data = await res.json();
+        
+        if (data.stats) {
+          setPreview({ floor: data.stats.floorPrice ? data.stats.floorPrice / 1e9 : 0, count: data.stats.listedCount ?? 0 });
+        } else {
+          setPreview(null);
+        }
+      } catch {
+        setPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
+    
+    const timeoutId = setTimeout(fetchPreview, 600);
+    return () => clearTimeout(timeoutId);
+  }, [collectionSymbol]);
 
   const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
 
@@ -249,23 +257,21 @@ function CreateCommunityForm() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
-                      Magic Eden Symbol <span className="text-stone-600">(Optional)</span>
+                      Magic Eden Symbol <span className="text-stone-500">(* Tensor soon)</span> <span className="text-stone-600">(Optional)</span>
                       {symbolLookupLoading && <span className="ml-2 text-violet-400 animate-pulse">Auto-detecting...</span>}
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 relative">
                       <input
                         className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
                         placeholder="e.g. mad_lads"
                         value={collectionSymbol}
                         onChange={e => setCollectionSymbol(e.target.value.toLowerCase())}
                       />
-                      <button
-                        onClick={previewCollection}
-                        disabled={!collectionSymbol || previewLoading}
-                        className="rounded-lg border border-violet-500/50 bg-violet-500/10 px-4 py-3 text-sm font-bold text-violet-300 transition hover:bg-violet-500/20 disabled:opacity-40"
-                      >
-                        {previewLoading ? "…" : "Preview"}
-                      </button>
+                      {previewLoading && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"></div>
+                        </div>
+                      )}
                     </div>
                     <p className="mt-2 text-[10px] text-stone-500">Used to pull floor prices and marketplace data.</p>
                   </div>

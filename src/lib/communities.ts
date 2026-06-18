@@ -34,6 +34,10 @@ export type ThemeSettings = {
     html: string;
   }[]; // for Game Hubs
   selectedAssetIds?: string[]; // for Game Hub asset selection
+  assetDescriptions?: Record<string, string>;
+  magicEdenSymbol?: string;
+  customCode?: string;
+  assetIds?: string[];
 };
 
 export type Community = {

@@ -69,18 +69,24 @@ export default async function Home() {
               <Link
                 key={community.id}
                 href={`/${community.slug}`}
-                className="group grid gap-6 border border-white/10 bg-white/[0.02] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.04] sm:grid-cols-[140px_1fr] sm:items-center"
+                className="group grid gap-6 border border-white/10 bg-white/[0.02] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.04] sm:grid-cols-[140px_1fr] sm:items-center rounded-xl"
               >
-                <div className="flex aspect-square w-full items-center justify-center border border-white/10 bg-neutral-950">
-                  <Image
-                    src={community.image}
-                    alt=""
-                    width={64}
-                    height={64}
-                    className="opacity-60 transition duration-500 group-hover:opacity-100 group-hover:scale-110"
-                  />
+                <div className="relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-neutral-950 rounded-lg">
+                  {community.image === "/window.svg" ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-900/40 to-neutral-950 transition duration-500 group-hover:scale-110">
+                      <span className="text-5xl font-black uppercase text-white/10">{community.name.substring(0, 2)}</span>
+                    </div>
+                  ) : (
+                    <Image
+                      src={community.image}
+                      alt={community.name}
+                      fill
+                      className="object-cover opacity-60 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
+                      unoptimized
+                    />
+                  )}
                 </div>
-                <div className="flex flex-col p-2 sm:p-0 justify-center">
+                <div className="flex flex-col justify-center p-2 sm:p-0">
                   <h3 className="text-3xl font-bold text-white transition group-hover:text-emerald-300">
                     {community.name}
                   </h3>

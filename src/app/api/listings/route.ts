@@ -17,8 +17,8 @@ export async function GET(request: Request) {
       ? Math.min(limitParam, 100)
       : LISTINGS_PAGE_SIZE;
 
-  let data = [];
-  let error = null;
+  let data: any[] = [];
+  let error: string | null = null;
 
   // If the symbol is a Solana address, use DAS API pagination
   if (symbol && symbol.length > 30) {
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     error = result.error;
   } else {
     const result = await fetchActiveListings(offset, limit, symbol);
-    data = result.data;
+    data = result.data ?? [];
     error = result.error;
   }
 

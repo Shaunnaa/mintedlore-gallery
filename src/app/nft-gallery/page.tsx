@@ -74,44 +74,63 @@ export default async function NftGalleryPage() {
                     key={community.id}
                     className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl shadow-black/20 transition duration-300 hover:border-emerald-400/40 hover:bg-white/[0.05]"
                   >
-                    <Link href={`/${community.slug}`} className="flex flex-col">
+                    <Link href={`/${community.slug}`} className="flex flex-1 flex-col">
                       {/* Image */}
-                      <div className="flex h-48 w-full items-center justify-center bg-neutral-950 border-b border-white/10 overflow-hidden">
-                        <Image
-                          src={community.image}
-                          alt={community.name}
-                          width={96}
-                          height={96}
-                          className="opacity-70 transition duration-500 group-hover:opacity-100 group-hover:scale-110"
-                        />
+                      <div className="flex h-48 w-full items-center justify-center bg-neutral-950 border-b border-white/10 overflow-hidden relative shrink-0">
+                        {community.image === "/window.svg" ? (
+                          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-900/40 to-neutral-950 transition duration-500 group-hover:scale-110">
+                            <span className="text-7xl font-black text-white/10 uppercase">{community.name.substring(0, 2)}</span>
+                          </div>
+                        ) : (
+                          <Image
+                            src={community.image}
+                            alt={community.name}
+                            fill
+                            className="object-cover opacity-70 transition duration-500 group-hover:opacity-100 group-hover:scale-110"
+                            unoptimized
+                          />
+                        )}
                       </div>
   
                       {/* Info */}
                       <div className="flex flex-col p-6 items-center text-center">
-                        <h3 className="text-2xl font-bold text-white group-hover:text-emerald-300 transition">
+                        <h3 className="text-2xl font-bold text-white group-hover:text-emerald-300 transition line-clamp-2">
                           {community.name}
                         </h3>
                       </div>
                     </Link>
 
-                    {/* Sub-collections */}
-                    {children.length > 0 && (
-                      <div className="border-t border-white/5 bg-black/20 p-4">
-                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-emerald-400 text-center">Stories</p>
-                        <div className="flex flex-col gap-2">
-                          {children.map(child => (
-                            <Link
-                              key={child.id}
-                              href={`/${community.slug}/${child.slug}`}
-                              className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
-                            >
-                              <span className="text-sm font-semibold text-stone-200">{child.name}</span>
-                              <span className="text-xs text-stone-500">View →</span>
-                            </Link>
-                          ))}
+                    {/* Sub-collections Area */}
+                    <div className="mt-auto flex h-[190px] flex-col border-t border-white/5 bg-black/20 p-4">
+                      {children.length > 0 ? (
+                        <>
+                          <p className="mb-3 shrink-0 text-center text-[10px] font-bold uppercase tracking-widest text-emerald-400">Stories</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {children.slice(0, children.length > 6 ? 5 : 6).map(child => (
+                              <Link
+                                key={child.id}
+                                href={`/${community.slug}/${child.slug}`}
+                                className="flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
+                              >
+                                <span className="truncate text-xs font-semibold text-stone-200">{child.name}</span>
+                              </Link>
+                            ))}
+                            {children.length > 6 && (
+                              <Link
+                                href={`/${community.slug}`}
+                                className="flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
+                              >
+                                <span className="truncate text-xs font-bold text-emerald-400">See More →</span>
+                              </Link>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex h-full flex-col items-center justify-center opacity-40">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">No Stories Yet</p>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}

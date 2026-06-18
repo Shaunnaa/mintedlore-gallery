@@ -36,7 +36,8 @@ function CreateSubCommunityForm() {
   
   const [nfts, setNfts] = useState<NftPreview[]>([]);
   const [nftsLoading, setNftsLoading] = useState(false);
-  const [selectedMints, setSelectedMints] = useState<Set<string>>(new Set());
+  const [selectedMints, setSelectedMints] = useState<string[]>([]);
+  const [assetDescriptions, setAssetDescriptions] = useState<Record<string, string>>({});
   const [nftSearch, setNftSearch] = useState("");
 
   // Step 3
@@ -81,21 +82,29 @@ function CreateSubCommunityForm() {
 
   const toggleMint = (mint: string) => {
     setSelectedMints(prev => {
-      const next = new Set(prev);
-      next.has(mint) ? next.delete(mint) : next.add(mint);
-      return next;
+      if (prev.includes(mint)) {
+        setAssetDescriptions(descriptions => {
+          const next = { ...descriptions };
+          delete next[mint];
+          return next;
+        });
+        return prev.filter(m => m !== mint);
+      }
+      return [...prev, mint];
     });
   };
 
   const isGameStory = collectionSymbol === "star_atlas";
   const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
-  const canProceedStep2 = isGameStory ? true : selectedMints.size > 0;
+  const canProceedStep2 = isGameStory ? true : selectedMints.length > 0;
 
   const handleSubmit = async () => {
     if (!publicKey) return;
     setSubmitting(true);
     setError(null);
     try {
+      const firstSelectedNft = nfts.find(n => n.tokenMint === selectedMints[0]);
+      
       const body = {
         ownerWallet: publicKey.toBase58(),
         name,
@@ -106,8 +115,10 @@ function CreateSubCommunityForm() {
         parentCommunityId: parentId,
         preferredView,
         vipThreshold,
-        selectedMints: Array.from(selectedMints),
+        selectedMints: selectedMints,
+        assetDescriptions,
         meSymbol: null,
+        image: firstSelectedNft?.image || null,
       };
       const res = await fetch("/api/community/create", { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" } });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed to create");
@@ -261,7 +272,7 @@ function CreateSubCommunityForm() {
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <label className="text-xs font-semibold uppercase tracking-widest text-stone-400">
-                    Select NFTs <span className="text-cyan-400">({selectedMints.size} selected)</span>
+                    Select NFTs <span className="text-cyan-400">({selectedMints.length} selected)</span>
                   </label>
                   <input
                     className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white placeholder-stone-600 outline-none focus:border-cyan-500/60"
@@ -272,27 +283,107 @@ function CreateSubCommunityForm() {
                 </div>
                 <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
                   {filteredNfts.map(nft => {
-                    const selected = selectedMints.has(nft.tokenMint);
+                    const selectedIdx = selectedMints.indexOf(nft.tokenMint);
+                    const selected = selectedIdx !== -1;
                     return (
                       <button
                         key={nft.tokenMint}
                         onClick={() => toggleMint(nft.tokenMint)}
-                        className={`relative aspect-square overflow-hidden rounded-lg border-2 transition ${selected ? "border-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "border-white/10 hover:border-white/30"}`}
+                        className={`group relative overflow-hidden rounded-lg border-2 text-left transition ${selected ? "border-emerald-500 bg-emerald-500/10" : "border-white/5 bg-white/5 hover:border-white/20"}`}
                       >
-                        {nft.image && <Image src={nft.image} alt={nft.name} fill className="object-cover" unoptimized />}
+                        <div className="aspect-square w-full bg-black/50">
+                          {nft.image && <img src={nft.image} alt={nft.name} className="h-full w-full object-cover" />}
+                        </div>
+                        <div className="p-2">
+                          <p className="truncate text-[10px] font-bold text-white">{nft.name}</p>
+                        </div>
                         {selected && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-cyan-500/20">
-                            <span className="text-lg font-black text-cyan-300">✓</span>
+                          <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-neutral-950">
+                            {selectedIdx + 1}
                           </div>
                         )}
                       </button>
                     );
                   })}
                 </div>
-                {selectedMints.size > 0 && (
-                  <p className="mt-2 text-xs text-stone-500">
-                    {selectedMints.size} NFT{selectedMints.size > 1 ? "s" : ""} selected for the story.
-                  </p>
+                {selectedMints.length > 0 && (
+                  <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                        Selected Assets Order
+                      </label>
+                      <span className="text-xs font-bold text-emerald-500">{selectedMints.length} Selected</span>
+                    </div>
+                    <div className="flex flex-col gap-4 mt-4">
+                      {selectedMints.map((mint, index) => {
+                        const nft = nfts.find(n => n.tokenMint === mint);
+                        if (!nft) return null;
+                        return (
+                          <div key={mint} className="flex flex-col gap-2 rounded-lg border border-white/10 bg-black/40 p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
+                                  {index + 1}
+                                </span>
+                                <div className="h-8 w-8 shrink-0 overflow-hidden rounded bg-black/50">
+                                  {nft.image && <img src={nft.image} alt={nft.name} className="h-full w-full object-cover" />}
+                                </div>
+                                <span className="truncate text-xs font-bold text-white">{nft.name}</span>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    if (index === 0) return;
+                                    setSelectedMints(prev => {
+                                      const next = [...prev];
+                                      [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                                      return next;
+                                    });
+                                  }}
+                                  disabled={index === 0}
+                                  className="flex h-6 w-6 items-center justify-center rounded bg-white/5 text-stone-400 transition hover:bg-white/10 hover:text-white disabled:opacity-30"
+                                  title="Move Up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (index === selectedMints.length - 1) return;
+                                    setSelectedMints(prev => {
+                                      const next = [...prev];
+                                      [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                                      return next;
+                                    });
+                                  }}
+                                  disabled={index === selectedMints.length - 1}
+                                  className="flex h-6 w-6 items-center justify-center rounded bg-white/5 text-stone-400 transition hover:bg-white/10 hover:text-white disabled:opacity-30"
+                                  title="Move Down"
+                                >
+                                  ↓
+                                </button>
+                                <button
+                                  onClick={() => toggleMint(mint)}
+                                  className="ml-2 flex h-6 w-6 items-center justify-center rounded bg-red-500/10 text-red-400 transition hover:bg-red-500/20 hover:text-red-300"
+                                  title="Remove"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <textarea
+                                rows={2}
+                                value={assetDescriptions[mint] || ""}
+                                onChange={(e) => setAssetDescriptions(prev => ({ ...prev, [mint]: e.target.value }))}
+                                placeholder={`Write a story line or lore snippet for ${nft.name}...`}
+                                className="mt-2 w-full resize-none rounded-lg border border-white/5 bg-black/50 px-3 py-2 text-[11px] text-white outline-none focus:border-emerald-500/50 focus:bg-black/80"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : nftsLoading ? (
@@ -358,19 +449,7 @@ function CreateSubCommunityForm() {
               </div>
             )}
 
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
-                VIP Threshold — NFTs required to be a holder
-              </label>
-              <input
-                type="number"
-                min={1}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-500/60"
-                value={vipThreshold}
-                onChange={e => setVipThreshold(Number(e.target.value))}
-              />
-              <p className="mt-1.5 text-xs text-stone-600">Users must hold at least this many NFTs to show the Verified Holder badge.</p>
-            </div>
+
 
             {error && (
               <div className="rounded-lg border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-300">{error}</div>

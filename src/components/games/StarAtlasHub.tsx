@@ -275,8 +275,8 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
                         />
                       );
                     })()
-                  ) : storyCommunity.preferredView === "timeline" ? (
-                    <TimelineView community={storyCommunity} items={listings} />
+                  ) : storyCommunity.preferredView.startsWith("timeline") ? (
+                    <TimelineView community={storyCommunity} stats={stats ?? null} listings={listings} />
                   ) : (
                     <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center text-emerald-300">
                       Story content loaded for: {storyCommunity.name}

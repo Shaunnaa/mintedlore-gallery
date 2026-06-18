@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       vipThreshold,
       selectedMints,        // string[] for type_b, [] for type_a
       meSymbol,             // Optional Magic Eden symbol
+      assetDescriptions,    // Record<string, string> for type_b descriptions
+      image,                // Optional default cover image
     } = await request.json();
 
     // ── Validation ────────────────────────────────────────────────────────────
@@ -50,6 +52,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Slug "${slug}" is already taken` }, { status: 409 });
     }
 
+    let finalImage = image;
+    if (!finalImage && meSymbol) {
+      try {
+        const meRes = await fetch(`https://api-mainnet.magiceden.dev/v2/collections/${meSymbol}`, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+          }
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData && meData.image) finalImage = meData.image;
+        }
+      } catch (err) {
+        console.error("Failed to fetch ME collection image", err);
+      }
+    }
+
     // ── Insert community ──────────────────────────────────────────────────────
     const { data: community, error: insertError } = await supabase
       .from("communities")
@@ -58,6 +78,7 @@ export async function POST(request: Request) {
         name,
         slug,
         description: description ?? "",
+        image: finalImage || null,
         collection_type: collectionType === "type_game" ? "type_a" : collectionType,
         collection_address: collectionAddress,
         parent_community_id: parentCommunityId || null,
@@ -65,7 +86,8 @@ export async function POST(request: Request) {
         vip_threshold: vipThreshold ?? 1,
         theme_settings: {
           ...(meSymbol ? { magicEdenSymbol: meSymbol } : {}),
-          ...(collectionType === "type_b" && selectedMints ? { assetIds: selectedMints } : {})
+          ...(collectionType === "type_b" && selectedMints ? { assetIds: selectedMints } : {}),
+          ...(collectionType === "type_b" && assetDescriptions ? { assetDescriptions } : {})
         },
       })
       .select()

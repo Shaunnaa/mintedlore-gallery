@@ -1,0 +1,6 @@
+﻿src/services/magicEden.ts(141,11): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/magicEden.ts(142,11): error TS2322: Type '{}' is not assignable to type 'string'.
+src/services/magicEden.ts(143,11): error TS2322: Type '{} | null' is not assignable to type 'string | null'.
+  Type '{}' is not assignable to type 'string'.
+src/services/magicEden.ts(144,11): error TS2322: Type '{}' is not assignable to type 'string'.
+src/services/magicEden.ts(146,11): error TS2322: Type '{}' is not assignable to type 'number'.
