@@ -93,7 +93,7 @@ export function CommunityViewSwitcher({
           {relatedChapters
             .filter((chapter) => chapter.type !== "type_a")
             .map((chapter) => {
-            const isCurrentPage = chapter.slug.endsWith(community.slug);
+            const isCurrentPage = chapter.slug.endsWith("/" + community.slug);
 
             return (
               <a
@@ -136,7 +136,7 @@ export function CommunityViewSwitcher({
             <Timeline5View community={community} stats={stats} listings={listings} statsError={statsError} ownedMints={ownedMints} />
           )}
           {view === "custom_code" && (
-            <CustomCodeView community={community} />
+            <CustomCodeView community={community} listings={listings} />
           )}
         </div>
       )}

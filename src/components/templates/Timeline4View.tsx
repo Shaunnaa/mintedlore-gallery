@@ -143,14 +143,16 @@ function StoryCard({
           >
             <div>
               <p className="text-xs uppercase tracking-widest text-stone-500">
-                Current Offering
+                {listing.priceLamports > 0 ? "Current Offering" : "Collection Asset"}
               </p>
-              <p
-                className="mt-1 text-2xl font-bold tabular-nums"
-                style={{ color: chapter.color }}
-              >
-                {formatValue(listing.priceLamports)}
-              </p>
+              {listing.priceLamports > 0 && (
+                <p
+                  className="mt-1 text-2xl font-bold tabular-nums"
+                  style={{ color: chapter.color }}
+                >
+                  {formatValue(listing.priceLamports)}
+                </p>
+              )}
             </div>
             <a
               href={`https://magiceden.io/item-details/${listing.tokenMint}`}
@@ -163,7 +165,7 @@ function StoryCard({
                 border: `1px solid ${chapter.color}50`,
               }}
             >
-              Acquire →
+              {listing.priceLamports > 0 ? "Acquire →" : "Details →"}
             </a>
           </div>
         </div>

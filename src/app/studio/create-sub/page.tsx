@@ -426,17 +426,18 @@ function CreateSubCommunityForm() {
                 <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Page Style</label>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {[
-                    { value: "timeline1",     icon: "📜", label: "Timeline 1",         desc: "Alternating card layout" },
-                    { value: "timeline2",     icon: "🎨", label: "Timeline 2",         desc: "Visual timeline" },
-                    { value: "timeline3",     icon: "⚡", label: "Timeline 3",         desc: "Progress style" },
-                    { value: "timeline4",     icon: "📖", label: "Story Mode",         desc: "Chapter cards" },
-                    { value: "timeline5",     icon: "🚀", label: "Scroll Story",       desc: "Cinematic space journey" },
+                    { value: "timeline1",     icon: "📜", label: "Alternating Flow",   desc: "Classic alternating card layout" },
+                    { value: "timeline2",     icon: "🖼️", label: "Museum Frame",       desc: "Centered gallery portraits" },
+                    { value: "timeline3",     icon: "⚡", label: "Cyber HUD",          desc: "Neon cyberpunk aesthetic" },
+                    { value: "timeline4",     icon: "📖", label: "Story Mode",         desc: "Soon disabled", disabled: true },
+                    { value: "timeline5",     icon: "🚀", label: "Scroll Story",       desc: "Soon disabled", disabled: true },
                     { value: "custom_code",   icon: "💻", label: "HTML Code",          desc: "Write raw HTML layout" },
                   ].map(v => (
                     <button
                       key={v.value}
-                      onClick={() => setPreferredView(v.value)}
-                      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${preferredView === v.value ? "border-cyan-500 bg-cyan-500/10" : "border-white/10 hover:border-white/20"}`}
+                      onClick={() => !v.disabled && setPreferredView(v.value)}
+                      disabled={v.disabled}
+                      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${v.disabled ? "opacity-50 cursor-not-allowed border-white/5 bg-white/5" : preferredView === v.value ? "border-cyan-500 bg-cyan-500/10" : "border-white/10 hover:border-white/20"}`}
                     >
                       <span className="text-xl shrink-0">{v.icon}</span>
                       <div className="min-w-0">

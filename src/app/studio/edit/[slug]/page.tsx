@@ -271,6 +271,7 @@ export default function EditCommunityPage() {
         primaryColor,
         backgroundColor: "#050505",
         ...(community.theme_settings as object || {}),
+        customHtml,
         customCode,
         assetIds,
         assetDescriptions,
@@ -584,15 +585,15 @@ export default function EditCommunityPage() {
               <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Page Style</h2>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {[
-                  { value: "timeline5", icon: "🚀", label: "Scroll Story",  desc: "Cinematic journey" },
-                  { value: "timeline4", icon: "📖", label: "Story Mode",    desc: "Chapter cards" },
-                  { value: "timeline1", icon: "📜", label: "Timeline 1",    desc: "Alternating layout" },
-                  { value: "timeline2", icon: "🎨", label: "Timeline 2",    desc: "Visual timeline" },
-                  { value: "timeline3", icon: "⚡", label: "Timeline 3",    desc: "Progress style" },
+                  { value: "timeline1", icon: "📜", label: "Alternating Flow", desc: "Classic alternating card layout" },
+                  { value: "timeline2", icon: "🖼️", label: "Museum Frame",     desc: "Centered gallery portraits" },
+                  { value: "timeline3", icon: "⚡", label: "Cyber HUD",        desc: "Neon cyberpunk aesthetic" },
+                  { value: "timeline4", icon: "📖", label: "Story Mode",       desc: "Soon disabled", disabled: true },
+                  { value: "timeline5", icon: "🚀", label: "Scroll Story",     desc: "Soon disabled", disabled: true },
                   { value: "custom_code",      icon: "💻", label: "HTML Code",     desc: "Custom HTML layout" },
                 ].map(v => (
-                  <button key={v.value} onClick={() => setPreferredView(v.value)}
-                    className={`flex flex-col gap-1 rounded-xl border p-3 text-left transition ${preferredView === v.value ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"}`}>
+                  <button key={v.value} onClick={() => !v.disabled && setPreferredView(v.value)} disabled={v.disabled}
+                    className={`flex flex-col gap-1 rounded-xl border p-3 text-left transition ${v.disabled ? "opacity-50 cursor-not-allowed border-white/5 bg-white/5" : preferredView === v.value ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"}`}>
                     <span className="text-xl">{v.icon}</span>
                     <span className={`text-xs font-bold ${preferredView === v.value ? "text-violet-300" : "text-white"}`}>{v.label}</span>
                     <span className="text-[10px] text-stone-500">{v.desc}</span>

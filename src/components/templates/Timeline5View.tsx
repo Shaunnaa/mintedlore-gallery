@@ -332,7 +332,9 @@ export function Timeline5View({ community, listings, ownedMints = [] }: {
                         {community.themeSettings.assetDescriptions[l.tokenMint]}
                       </p>
                     )}
-                    <p className="mt-2 text-[10px] font-semibold text-emerald-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</p>
+                    {l.priceLamports > 0 && (
+                      <p className="mt-2 text-[10px] font-semibold text-emerald-400">{(l.priceLamports / 1e9).toFixed(2)} SOL</p>
+                    )}
                   </div>
 
                   {/* Owned badge */}

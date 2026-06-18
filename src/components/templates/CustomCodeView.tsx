@@ -1,12 +1,27 @@
 import type { Community } from "@/lib/communities";
+import type { MagicEdenListing } from "@/services/magicEden";
 
 type CustomCodeViewProps = {
   community: Community;
+  listings?: MagicEdenListing[];
 };
 
-export function CustomCodeView({ community }: CustomCodeViewProps) {
-  const customHtml = community.themeSettings?.customHtml;
+export function CustomCodeView({ community, listings = [] }: CustomCodeViewProps) {
+  let customHtml = community.themeSettings?.customHtml;
   const customCss = community.themeSettings?.customCss;
+  const assetDescriptions = community.themeSettings?.assetDescriptions || {};
+
+  if (customHtml && listings.length > 0) {
+    listings.forEach((listing, idx) => {
+      const i = idx + 1;
+      const desc = assetDescriptions[listing.tokenMint] || "";
+      // Use regex with 'g' flag to replace all occurrences
+      customHtml = customHtml!
+        .replace(new RegExp(`{{NFT_IMAGE_${i}}}`, 'g'), listing.image)
+        .replace(new RegExp(`{{NFT_NAME_${i}}}`, 'g'), listing.name)
+        .replace(new RegExp(`{{NFT_DESC_${i}}}`, 'g'), desc);
+    });
+  }
 
   return (
     <div className="w-full">

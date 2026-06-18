@@ -20,10 +20,10 @@ export function Timeline2View({
     : listings;
 
   return (
-    <div className="mx-auto max-w-3xl py-12">
+    <div className="mx-auto max-w-2xl py-12 px-4 md:px-0">
 
       {/* Story Content */}
-      <article className="mx-auto mt-12 max-w-2xl">
+      <article className="mx-auto mt-12 max-w-xl">
         <header className="mb-10 border-b border-white/10 pb-10 text-center">
           <h1 className="text-4xl font-extrabold text-white md:text-5xl lg:text-6xl">
             {community.name}
@@ -36,13 +36,18 @@ export function Timeline2View({
             const desc = community.themeSettings?.assetDescriptions?.[listing.tokenMint] || `A highly sought-after artifact from the ${community.name} collection.`;
             return (
               <div key={listing.tokenMint} className="flex flex-col gap-6">
-                <h2 className="text-3xl font-bold text-white transition-colors hover:text-emerald-300">{listing.name}</h2>
-                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/50 shadow-xl transition-all duration-500 hover:border-emerald-500/40 hover:shadow-emerald-900/20">
+                <h2 className="text-center text-3xl font-bold text-white transition-colors hover:text-emerald-300">{listing.name}</h2>
+                <div className="relative mx-auto aspect-square w-3/4 sm:aspect-[4/5] md:aspect-square md:w-1/2 overflow-hidden rounded-2xl border border-white/10 bg-black/50 shadow-xl transition-all duration-500 hover:border-emerald-500/40 hover:shadow-emerald-900/20">
                   {listing.image && (
-                    <Image src={listing.image} alt={listing.name} fill className="object-cover transition-transform duration-700 hover:scale-105" unoptimized />
+                    <>
+                      {/* Blurred background to fill empty space */}
+                      <Image src={listing.image} alt="" fill className="object-cover blur-3xl opacity-30 scale-110" unoptimized />
+                      {/* Main uncropped image */}
+                      <Image src={listing.image} alt={listing.name} fill className="object-contain transition-transform duration-700 hover:scale-105 z-10" unoptimized />
+                    </>
                   )}
                   {ownedMints.includes(listing.tokenMint) && (
-                    <div className="absolute right-4 top-4">
+                    <div className="absolute right-4 top-4 z-20">
                       <OwnedBadge />
                     </div>
                   )}
@@ -51,7 +56,9 @@ export function Timeline2View({
                   {desc}
                 </div>
                 <div className="flex justify-between items-center border-t border-white/5 pt-4">
-                  <span className="text-xs uppercase tracking-widest text-emerald-400">Current Offering: {(listing.priceLamports / 1e9).toFixed(2)} SOL</span>
+                  <span className="text-xs uppercase tracking-widest text-emerald-400">
+                    {listing.priceLamports > 0 ? `Current Offering: ${(listing.priceLamports / 1e9).toFixed(2)} SOL` : "Collection Asset"}
+                  </span>
                   <a href={`https://magiceden.io/item-details/${listing.tokenMint}`} target="_blank" rel="noreferrer" className="rounded-full bg-white/5 px-5 py-2 text-xs font-bold uppercase tracking-widest text-stone-300 transition hover:bg-white/10 hover:text-white">
                     View on Magic Eden →
                   </a>

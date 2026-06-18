@@ -27,7 +27,7 @@ export async function PUT(
     const { slug } = await params;
     const { data: community } = await supabase
       .from("communities")
-      .select("id, owner_wallet")
+      .select("id, owner_wallet, collection_type")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -54,6 +54,21 @@ export async function PUT(
       .single();
 
     if (error) throw error;
+
+    // Sync community_nfts if this is a type_b community
+    if (community.collection_type === "type_b" && themeSettings?.assetIds) {
+      // Remove all existing to ensure clean sync of order/removals
+      await supabase.from("community_nfts").delete().eq("community_id", community.id);
+      
+      if (themeSettings.assetIds.length > 0) {
+        const rows = themeSettings.assetIds.map((mint: string) => ({
+          community_id: community.id,
+          mint_address: mint,
+        }));
+        const { error: nftError } = await supabase.from("community_nfts").insert(rows);
+        if (nftError) throw nftError;
+      }
+    }
 
     return NextResponse.json({ success: true, community: data });
   } catch (err: unknown) {

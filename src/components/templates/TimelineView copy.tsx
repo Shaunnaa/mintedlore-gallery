@@ -41,6 +41,10 @@ export function TimelineView({
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBMMDAgMEw0MCAwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4wMikiIHN0cm9rZS13aWR0aD0iMSIvPgo8L3N2Zz4=')] opacity-50" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400 backdrop-blur-md">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Timeline View
+          </p>
           <h2 className="mt-6 text-4xl font-extrabold tracking-tight text-white md:text-5xl lg:text-7xl">
             {community.name} <span className="text-stone-600">Story</span>
           </h2>
@@ -56,7 +60,7 @@ export function TimelineView({
         {/* Central vertical line for desktop, left line for mobile */}
         <div className="absolute bottom-0 left-6 top-0 w-px bg-white/10 md:left-1/2 md:-ml-px" />
 
-        <div className="flex flex-col gap-6 md:gap-0">
+        <div className="flex flex-col gap-6">
           {displayListings.map((listing, index) => {
             const isEven = index % 2 === 0;
             const isOwned = ownedMints.includes(listing.tokenMint);
@@ -64,7 +68,8 @@ export function TimelineView({
             return (
               <div
                 key={listing.tokenMint}
-                className={`relative flex flex-col md:flex-row md:items-center ${isEven ? "md:flex-row-reverse" : ""} ${index > 0 ? "md:-mt-24" : ""}`}
+                className={`relative flex flex-col md:flex-row md:items-center ${isEven ? "md:flex-row-reverse" : ""
+                  }`}
               >
                 {/* Timeline Dot */}
                 <div className="absolute left-6 top-6 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-neutral-950 bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,0.1)] md:left-1/2 md:top-1/2" />
@@ -115,23 +120,18 @@ export function TimelineView({
 
                     <div className="flex flex-col gap-4 p-4 sm:p-5">
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ring-1 transition-colors sm:text-xs ${listing.priceLamports > 0
-                            ? "bg-emerald-400/10 text-emerald-400 ring-emerald-400/20 group-hover:bg-emerald-400/20"
-                            : "bg-white/5 text-stone-400 ring-white/10 group-hover:bg-white/10"
-                          }`}>
-                          {listing.priceLamports > 0 ? "Market Listing" : "Collection Asset"}
+                        <span className="inline-flex items-center rounded-full bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-400 ring-1 ring-emerald-400/20 transition-colors group-hover:bg-emerald-400/20 sm:text-xs">
+                          Market Listing
                         </span>
-                        {listing.priceLamports > 0 && (
-                          <div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 ring-1 ring-white/10 transition-colors group-hover:ring-emerald-500/30">
-                            <span className="relative flex h-1.5 w-1.5">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                            </span>
-                            <time className="font-mono text-xs font-semibold text-emerald-50">
-                              {formatValue(listing.priceLamports)}
-                            </time>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 ring-1 ring-white/10 transition-colors group-hover:ring-emerald-500/30">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                          </span>
+                          <time className="font-mono text-xs font-semibold text-emerald-50">
+                            {formatValue(listing.priceLamports)}
+                          </time>
+                        </div>
                       </div>
 
                       <div className="flex flex-col gap-5">
@@ -167,7 +167,7 @@ export function TimelineView({
                             onClick={() => setSelectedToken(listing.tokenMint)}
                             className="mt-5 w-max inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-5 py-2 text-xs font-bold uppercase tracking-wider text-emerald-300 transition-all hover:scale-105 hover:bg-emerald-400 hover:text-neutral-950"
                           >
-                            {listing.priceLamports > 0 ? "Buy on Magic Eden" : "View on Magic Eden"}
+                            Buy on Magic Eden
                           </button>
                         </div>
                       </div>
