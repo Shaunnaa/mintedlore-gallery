@@ -3,6 +3,7 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { StampCard } from "./StampCard";
 
 const WalletMultiButtonDynamic = dynamic(
   async () =>
@@ -84,45 +85,8 @@ export function WalletChecker({
   }
 
   if (count < vipThreshold) {
-    const progressPercentage = Math.min(Math.round((count / vipThreshold) * 100), 100);
-    return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/5 p-8 text-center shadow-2xl">
-        <h3 className="mb-2 text-xl font-bold text-amber-400">
-          VIP Access Locked
-        </h3>
-        <p className="mb-6 text-stone-300">
-          You currently hold <strong className="text-white">{count}</strong> out of <strong className="text-white">{vipThreshold}</strong> required NFTs.
-        </p>
-        
-        {/* Progress Bar */}
-        <div className="w-full max-w-sm h-3 rounded-full bg-black/60 border border-white/10 overflow-hidden relative">
-          <div 
-            className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-1000 ease-out"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-        
-        <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-amber-500/80">
-          Collect {vipThreshold - count} more to unlock secret story
-        </p>
-      </div>
-    );
+    return <StampCard count={count} threshold={vipThreshold} />;
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-8 text-center shadow-[0_0_40px_rgba(16,185,129,0.15)] transition-all">
-      <h3 className="mb-2 text-2xl font-bold text-emerald-400">
-        🎉 VIP Access Granted!
-      </h3>
-      <p className="text-lg text-emerald-100/90">
-        You own <span className="font-bold text-emerald-300">{count}</span>{" "}
-        piece(s).
-      </p>
-      <div className="mt-5 inline-block rounded-lg border border-emerald-500/30 bg-black/40 px-4 py-2">
-        <p className="text-sm font-medium uppercase tracking-widest text-emerald-300">
-          Secret Story Unlocked
-        </p>
-      </div>
-    </div>
-  );
+  return <StampCard count={count} threshold={vipThreshold} isGranted />;
 }
