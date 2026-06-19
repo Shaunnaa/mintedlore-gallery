@@ -16,14 +16,22 @@ export function CustomCodeView({ community, listings = [] }: CustomCodeViewProps
           entry.target.classList.add('story-anim-active');
         }
       });
-    }, { threshold: 0.3 });
+    }, { threshold: 0.05, rootMargin: "50px" });
 
-    setTimeout(() => {
-      const elements = document.querySelectorAll('.story-anim-trigger');
-      elements.forEach(el => observer.observe(el));
-    }, 50);
+    const interval = setInterval(() => {
+      const elements = document.querySelectorAll('.story-anim-trigger:not(.is-observed)');
+      if (elements.length > 0) {
+        elements.forEach(el => {
+          el.classList.add('is-observed');
+          observer.observe(el);
+        });
+      }
+    }, 200);
 
-    return () => observer.disconnect();
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
+    };
   }, [community.themeSettings?.customHtml]);
 
   let customHtml = community.themeSettings?.customHtml;

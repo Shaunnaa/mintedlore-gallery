@@ -60,24 +60,32 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
 
   // Automatically animate elements inside the custom HTML
   useEffect(() => {
-    if (activeTab === "stories" && !loading) {
+    if (activeTab === "stories") {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('story-anim-active');
           }
         });
-      }, { threshold: 0.3 });
+      }, { threshold: 0.05, rootMargin: "50px" });
 
-      // Small timeout to ensure DOM is fully painted after loading=false
-      setTimeout(() => {
-        const elements = document.querySelectorAll('.story-anim-trigger');
-        elements.forEach(el => observer.observe(el));
-      }, 50);
+      // Robust check: keep looking for elements that haven't been observed yet
+      const interval = setInterval(() => {
+        const elements = document.querySelectorAll('.story-anim-trigger:not(.is-observed)');
+        if (elements.length > 0) {
+          elements.forEach(el => {
+            el.classList.add('is-observed');
+            observer.observe(el);
+          });
+        }
+      }, 200);
 
-      return () => observer.disconnect();
+      return () => {
+        clearInterval(interval);
+        observer.disconnect();
+      };
     }
-  }, [activeTab, loading]);
+  }, [activeTab, loading, storyCommunity?.id, storyCommunity?.themeSettings?.customHtml]);
 
   const selectedAssetIds = community.themeSettings?.selectedAssetIds || [];
   
@@ -138,11 +146,11 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
                 <span className="relative inline-flex h-3 w-3 bg-cyan-300" />
               </span>
               <span className="text-sm font-bold uppercase tracking-widest">
-                Marketplace Hub
+                NFT Gallery
               </span>
             </button>
 
-            <Link 
+            {/* <Link 
               href={`/nft-game/${community.parentCommunityId ? community.parentCommunityId : community.slug}`}
               onClick={() => setActiveTab("nft")}
               className={`flex items-center gap-3 px-6 py-3 rounded-xl border-2 transition ${activeTab === "nft" ? "bg-purple-500/10 border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]" : "border-white/10 text-stone-400 hover:border-white/30"}`}
@@ -150,7 +158,7 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
               <span className="text-sm font-bold uppercase tracking-widest">
                 NFT Gallery
               </span>
-            </Link>
+            </Link> */}
 
             <button 
               onClick={() => setActiveTab("stories")}
