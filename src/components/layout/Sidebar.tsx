@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
 
@@ -79,17 +79,67 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { connected } = useWallet();
 
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
-    <aside
-      className={`
-        sticky top-0 z-40 flex h-screen flex-col border-r border-white/10 bg-[#0c0c10] transition-all duration-300
-        ${collapsed ? "w-[72px]" : "w-64"}
-      `}
-    >
-      {/* ── Logo ── */}
-      <div className={`flex items-center border-b border-white/10 px-4 py-5 ${collapsed ? "justify-center" : "gap-3"}`}>
+    <>
+      {/* ── Mobile Header ── */}
+      <div className="md:hidden sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-[#0c0c10] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-emerald-400/20 bg-emerald-400/10">
+            <img src="/logo.png" alt="MintedLore Logo" className="h-full w-full object-cover" />
+          </div>
+          <span className="text-sm font-bold tracking-wider text-white whitespace-nowrap">
+            MintedLore<span className="text-emerald-400">Gallery</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg">
+            <WalletMultiButtonDynamic className="!h-8 !w-8 !min-w-0 !rounded-lg !p-0 ![font-size:0px] ![color:transparent] flex items-center justify-center [&_.wallet-adapter-button-start-icon]:!m-0" />
+          </div>
+          <button onClick={() => setMobileOpen(true)} className="text-stone-400 hover:text-white">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile Overlay ── */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar (Desktop Sticky / Mobile Drawer) ── */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 flex h-screen flex-col border-r border-white/10 bg-[#0c0c10] transition-all duration-300
+          ${mobileOpen ? "translate-x-0 w-64" : "-translate-x-full"}
+          md:sticky md:top-0 md:translate-x-0
+          ${collapsed ? "md:w-[72px]" : "md:w-64"}
+        `}
+      >
+        {/* ── Mobile Close Button (Inside Drawer Header) ── */}
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-5 md:hidden">
+          <span className="text-base font-bold tracking-wider text-white">Menu</span>
+          <button onClick={() => setMobileOpen(false)} className="text-stone-400 hover:text-white">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* ── Logo (Desktop Only) ── */}
+        <div className={`hidden md:flex items-center border-b border-white/10 px-4 py-5 ${collapsed ? "justify-center" : "gap-3"}`}>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-emerald-400/20 bg-emerald-400/10">
           <img src="/logo.png" alt="MintedLore Logo" className="h-full w-full object-cover" />
         </div>
@@ -202,10 +252,10 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* ── Collapse Toggle ── */}
+      {/* ── Collapse Toggle (Desktop Only) ── */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center border-t border-white/10 py-3 text-stone-600 transition hover:text-stone-300"
+        className="hidden md:flex items-center justify-center border-t border-white/10 py-3 text-stone-600 transition hover:text-stone-300"
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -213,5 +263,6 @@ export function Sidebar() {
         </svg>
       </button>
     </aside>
+    </>
   );
 }

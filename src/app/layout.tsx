@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body className="flex bg-neutral-950">
+      <body className="flex flex-col md:flex-row bg-neutral-950">
         <SolanaWalletProvider>
           <Sidebar />
           <div className="flex-1 min-h-screen">
