@@ -25,12 +25,13 @@ This HTML will be injected directly into a web platform. You must follow these s
    - **Floating Planet:** Add a giant glowing planet in the `.parallax-bg` with a slow, infinite floating animation (`transform: translateY`).
    - **Flying Spaceship:** To make a spaceship "fly up" as the user scrolls, place a spaceship image/element inside the `.story-track` (between sections) so it physically scrolls up the screen along with the text!
 6. **Text Animations:** Use my built-in Intersection Observer. Add the class `story-anim-trigger` to text/UI elements. Define `.story-anim-trigger` with its hidden state in CSS (`opacity: 0; transform: translateY(40px);`). When it scrolls into view, my system automatically adds `.story-anim-active` (`opacity: 1; transform: translateY(0);`). Use this to fade in text beautifully.
-6. **Magic Placeholders & NFT Cards (CRITICAL):** My platform automatically injects character images and names. 
+7. **Magic Placeholders & NFT Cards (CRITICAL):** My platform automatically injects character images, names, and user-provided descriptions. 
    - Use `{{NFT_IMAGE_1}}` for the first character's image URL, `{{NFT_IMAGE_2}}` for the second, etc.
    - Use `{{NFT_NAME_1}}` for the first character's name, `{{NFT_NAME_2}}` for the second, etc.
-   - **Rule:** Whenever the story focuses on a specific character, you MUST display their image prominently in a beautiful, full-box "NFT Card" layout alongside or behind their text block as the user scrolls to their section.
+   - Use `{{NFT_DESC_1}}` for the first character's custom story description, `{{NFT_DESC_2}}` for the second, etc.
+   - **Rule:** Whenever the story focuses on a specific character, you MUST display their image prominently in a beautiful, full-box "NFT Card" layout alongside their text block as the user scrolls to their section. If a description is provided (`{{NFT_DESC_1}}`), weave it into their narrative or display it as a stylish quote!
    - **Image Sizing (CRITICAL):** NEVER use fixed heights (like `height: 500px`) for `.nft-card img` because it cuts off character heads! ALWAYS use `width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: top center;` to ensure the character's face remains visible.
-7. **Design Aesthetics:** Use beautiful, modern sci-fi aesthetics. Dark space backgrounds, glowing drop-shadows on the images, gradient text, and elegant typography.
+8. **Design Aesthetics:** Use beautiful, modern sci-fi aesthetics. Dark space backgrounds, glowing drop-shadows on the images, gradient text, and elegant typography.
 
 ### Story Requirements:
 - **Tone:** [INSERT TONE, e.g., Epic space opera, cyberpunk mystery, etc.]
@@ -38,7 +39,7 @@ This HTML will be injected directly into a web platform. You must follow these s
 - **Characters:** There are [INSERT NUMBER] characters in this story. 
 - **Structure:** Create a continuous journey. 
   - Phase 1: Deep space. An epic introduction.
-  - Phase 2: As the story progresses, reveal each character (`{{NFT_NAME_1}}`, `{{NFT_NAME_2}}`, etc.) one by one. Each character's section must feature their image (`{{NFT_IMAGE_X}}`) in a stylish, full-size NFT card layout alongside their part of the story.
+  - Phase 2: As the story progresses, reveal each character (`{{NFT_NAME_1}}`, `{{NFT_NAME_2}}`, etc.) one by one. Each character's section must feature their image (`{{NFT_IMAGE_X}}`) in a stylish, full-size NFT card layout alongside their part of the story. Ensure you use their description (`{{NFT_DESC_X}}`) to build their narrative!
   - Phase 3: A dramatic landing/conclusion with a call-to-action button.
 
 Please generate the complete HTML/CSS code block now.

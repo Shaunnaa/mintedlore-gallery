@@ -60,7 +60,7 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
 
   // Automatically animate elements inside the custom HTML
   useEffect(() => {
-    if (activeTab === "stories") {
+    if (activeTab === "stories" && !loading) {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -69,12 +69,15 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
         });
       }, { threshold: 0.3 });
 
-      const elements = document.querySelectorAll('.story-anim-trigger');
-      elements.forEach(el => observer.observe(el));
+      // Small timeout to ensure DOM is fully painted after loading=false
+      setTimeout(() => {
+        const elements = document.querySelectorAll('.story-anim-trigger');
+        elements.forEach(el => observer.observe(el));
+      }, 50);
 
       return () => observer.disconnect();
     }
-  }, [activeTab]);
+  }, [activeTab, loading]);
 
   const selectedAssetIds = community.themeSettings?.selectedAssetIds || [];
   
@@ -244,29 +247,66 @@ export function StarAtlasHub({ community, storyCommunity, stats, listings, relat
             {isStoryRoute && storyCommunity && storyCommunity.collectionType === "type_b" && (
               <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="prose prose-invert max-w-none">
-                  {storyCommunity.preferredView === "custom_code" && storyCommunity.themeSettings?.customCode ? (
-                    (() => {
-                      let html = storyCommunity.themeSettings.customCode as string;
+                  {storyCommunity.preferredView === "custom_code" && storyCommunity.themeSettings?.customHtml ? (
+                    loading ? (
+                      <div className="flex min-h-[40vh] items-center justify-center text-emerald-500/50">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+                          <p className="font-mono text-sm uppercase tracking-widest">Loading Game Assets...</p>
+                        </div>
+                      </div>
+                    ) : (() => {
+                      let html = storyCommunity.themeSettings.customHtml as string;
                       const assetIds = storyCommunity.themeSettings.assetIds as string[] | undefined;
                       
                       // Process template tags just like the legacy code did
                       if (assetIds && assetIds.length > 0) {
                         assetIds.forEach((id: string, idx: number) => {
                           if (!id) return;
-                          const asset = items.find((a: any) => a._id === id);
-                          if (asset) {
-                            const regexImage = new RegExp(`\\{\\{NFT_IMAGE_${idx + 1}\\}\\}`, 'g');
-                            const regexName = new RegExp(`\\{\\{NFT_NAME_${idx + 1}\\}\\}`, 'g');
-                            html = html.replace(regexImage, asset.image);
-                            html = html.replace(regexName, asset.name);
+                          
+                          let assetImage = "";
+                          let assetName = "";
+                          let assetDesc = storyCommunity.themeSettings?.assetDescriptions?.[id] || "";
+                          
+                          // 1. Try finding it in Star Atlas items (match by mint or _id)
+                          const saAsset = items.find((a: any) => a.mint === id || a._id === id);
+                          if (saAsset) {
+                            assetImage = saAsset.image || "";
+                            assetName = saAsset.name || "";
+                          } else {
+                            // 2. Fallback to finding it in Magic Eden listings (standard NFTs)
+                            const meAsset = listings.find((l: any) => l.tokenMint === id);
+                            if (meAsset) {
+                              assetImage = meAsset.image || "";
+                              assetName = meAsset.name || "";
+                            }
+                          }
+                          
+                          if (assetImage && assetName) {
                             
+                            html = html.replaceAll(`{{NFT_IMAGE_${idx + 1}}}`, assetImage);
+                            html = html.replaceAll(`{{NFT_NAME_${idx + 1}}}`, assetName);
+                            html = html.replaceAll(`{{NFT_DESC_${idx + 1}}}`, assetDesc);
+                            
+                            // Support generic un-numbered tags for the very first asset
                             if (idx === 0) {
-                              html = html.replace(/\{\{NFT_IMAGE\}\}/g, asset.image);
-                              html = html.replace(/\{\{NFT_NAME\}\}/g, asset.name);
+                              html = html.replaceAll('{{NFT_IMAGE}}', assetImage);
+                              html = html.replaceAll('{{NFT_NAME}}', assetName);
+                              html = html.replaceAll('{{NFT_DESC}}', assetDesc);
                             }
                           }
                         });
                       }
+                      
+                      // Cleanup any remaining unmatched placeholders to prevent 404s
+                      for (let i = 1; i <= 10; i++) {
+                        html = html.replaceAll(`{{NFT_IMAGE_${i}}}`, '');
+                        html = html.replaceAll(`{{NFT_NAME_${i}}}`, '');
+                        html = html.replaceAll(`{{NFT_DESC_${i}}}`, '');
+                      }
+                      html = html.replaceAll('{{NFT_IMAGE}}', '');
+                      html = html.replaceAll('{{NFT_NAME}}', '');
+                      html = html.replaceAll('{{NFT_DESC}}', '');
                       
                       return (
                         <div 

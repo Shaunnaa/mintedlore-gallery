@@ -166,8 +166,8 @@ export function Sidebar() {
           <WalletMultiButtonDynamic className="!flex !w-full !justify-center !h-10 !rounded-xl !px-4 !text-sm !font-semibold transition-all" />
         ) : (
           connected ? (
-            <div className="overflow-hidden w-10 h-10 rounded-xl flex items-center justify-center">
-              <WalletMultiButtonDynamic className="!h-10 !w-10 !min-w-0 !rounded-xl !p-0 !text-[0px] !whitespace-nowrap flex items-center justify-center [&_.wallet-adapter-button-start-icon]:!mr-0" />
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl">
+              <WalletMultiButtonDynamic className="!h-10 !w-10 !min-w-0 !rounded-xl !p-0 ![font-size:0px] ![color:transparent] flex items-center justify-center [&_.wallet-adapter-button-start-icon]:!m-0" />
             </div>
           ) : (
             <button
