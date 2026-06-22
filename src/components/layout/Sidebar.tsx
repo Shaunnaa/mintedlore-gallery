@@ -74,6 +74,15 @@ const navItems: NavItem[] = [
     ),
     soon: true,
   },
+  {
+    label: "My Profile",
+    href: "/profile",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      </svg>
+    ),
+  },
 ];
 
 export function Sidebar() {
@@ -113,7 +122,7 @@ export function Sidebar() {
 
       {/* ── Mobile Overlay ── */}
       {mobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
@@ -140,129 +149,129 @@ export function Sidebar() {
 
         {/* ── Logo (Desktop Only) ── */}
         <div className={`hidden md:flex items-center border-b border-white/10 px-4 py-5 ${collapsed ? "justify-center" : "gap-3"}`}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-emerald-400/20 bg-emerald-400/10">
-          <img src="/logo.png" alt="MintedLore Logo" className="h-full w-full object-cover" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-emerald-400/20 bg-emerald-400/10">
+            <img src="/logo.png" alt="MintedLore Logo" className="h-full w-full object-cover" />
+          </div>
+          {!collapsed && (
+            <span className="text-base font-bold tracking-wider text-white whitespace-nowrap">
+              MintedLore<span className="text-emerald-400">Gallery</span>
+            </span>
+          )}
         </div>
-        {!collapsed && (
-          <span className="text-base font-bold tracking-wider text-white whitespace-nowrap">
-            MintedLore<span className="text-emerald-400">Gallery</span>
-          </span>
-        )}
-      </div>
 
-      {/* ── Nav Items ── */}
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-4">
-        {navItems.map((item) => {
-          const isActive = item.href ? pathname === item.href : false;
-          const content = (
-            <span
-              key={item.label}
-              className={`
+        {/* ── Nav Items ── */}
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-4">
+          {navItems.map((item) => {
+            const isActive = item.href ? pathname === item.href : false;
+            const content = (
+              <span
+                key={item.label}
+                className={`
                 group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all
                 ${item.soon
-                  ? "cursor-not-allowed text-stone-600"
-                  : isActive
-                  ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20"
-                  : "text-stone-400 hover:bg-white/5 hover:text-white"
-                }
+                    ? "cursor-not-allowed text-stone-600"
+                    : isActive
+                      ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20"
+                      : "text-stone-400 hover:bg-white/5 hover:text-white"
+                  }
                 ${collapsed ? "justify-center" : ""}
               `}
+              >
+                <span className="shrink-0">{item.icon}</span>
+                {!collapsed && (
+                  <span className="flex-1">{item.label}</span>
+                )}
+                {!collapsed && item.soon && (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-500">
+                    Soon
+                  </span>
+                )}
+              </span>
+            );
+
+            return item.href && !item.soon ? (
+              <Link key={item.label} href={item.href}>
+                {content}
+              </Link>
+            ) : (
+              <div key={item.label} title={item.soon ? `${item.label} (Coming Soon)` : item.label}>
+                {content}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* ── Owner Dashboard (Connected Only) ── */}
+        {connected && (
+          <div className={`border-t border-white/10 px-2 py-3`}>
+            <Link
+              href="/studio"
+              title="My Communities"
+              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${pathname.startsWith("/studio") ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20" : "text-stone-300 hover:bg-white/5 hover:text-white"} ${collapsed ? "justify-center" : ""}`}
             >
-              <span className="shrink-0">{item.icon}</span>
-              {!collapsed && (
-                <span className="flex-1">{item.label}</span>
-              )}
-              {!collapsed && item.soon && (
+              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              {!collapsed && <span className="flex-1">My Collections</span>}
+            </Link>
+          </div>
+        )}
+
+        {/* ── Wallet Button ── */}
+        <div className="border-t border-white/10 px-2 py-3 flex justify-center w-full">
+          {!collapsed ? (
+            <WalletMultiButtonDynamic className="!flex !w-full !justify-center !h-10 !rounded-xl !px-4 !text-sm !font-semibold transition-all" />
+          ) : (
+            connected ? (
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl">
+                <WalletMultiButtonDynamic className="!h-10 !w-10 !min-w-0 !rounded-xl !p-0 ![font-size:0px] ![color:transparent] flex items-center justify-center [&_.wallet-adapter-button-start-icon]:!m-0" />
+              </div>
+            ) : (
+              <button
+                onClick={() => setCollapsed(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#512da8] text-white transition-all hover:bg-[#1a1f2e]"
+                title="Connect Wallet"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H4.5A2.25 2.25 0 002.25 12v6.75A2.25 2.25 0 004.5 21h15a2.25 2.25 0 002.25-2.25V12z" />
+                </svg>
+              </button>
+            )
+          )}
+        </div>
+
+        {/* ── Settings (Soon) ── */}
+        <div className={`border-t border-white/10 px-2 py-3`}>
+          <div
+            title="Settings (Coming Soon)"
+            className={`flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-600 ${collapsed ? "justify-center" : ""}`}
+          >
+            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {!collapsed && (
+              <>
+                <span className="flex-1">Settings</span>
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-500">
                   Soon
                 </span>
-              )}
-            </span>
-          );
-
-          return item.href && !item.soon ? (
-            <Link key={item.label} href={item.href}>
-              {content}
-            </Link>
-          ) : (
-            <div key={item.label} title={item.soon ? `${item.label} (Coming Soon)` : item.label}>
-              {content}
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* ── Owner Dashboard (Connected Only) ── */}
-      {connected && (
-        <div className={`border-t border-white/10 px-2 py-3`}>
-          <Link
-            href="/studio"
-            title="My Communities"
-            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${pathname.startsWith("/studio") ? "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20" : "text-stone-300 hover:bg-white/5 hover:text-white"} ${collapsed ? "justify-center" : ""}`}
-          >
-            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
-            {!collapsed && <span className="flex-1">My Collections</span>}
-          </Link>
+              </>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* ── Wallet Button ── */}
-      <div className="border-t border-white/10 px-2 py-3 flex justify-center w-full">
-        {!collapsed ? (
-          <WalletMultiButtonDynamic className="!flex !w-full !justify-center !h-10 !rounded-xl !px-4 !text-sm !font-semibold transition-all" />
-        ) : (
-          connected ? (
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl">
-              <WalletMultiButtonDynamic className="!h-10 !w-10 !min-w-0 !rounded-xl !p-0 ![font-size:0px] ![color:transparent] flex items-center justify-center [&_.wallet-adapter-button-start-icon]:!m-0" />
-            </div>
-          ) : (
-            <button
-              onClick={() => setCollapsed(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#512da8] text-white transition-all hover:bg-[#1a1f2e]"
-              title="Connect Wallet"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H4.5A2.25 2.25 0 002.25 12v6.75A2.25 2.25 0 004.5 21h15a2.25 2.25 0 002.25-2.25V12z" />
-              </svg>
-            </button>
-          )
-        )}
-      </div>
-
-      {/* ── Settings (Soon) ── */}
-      <div className={`border-t border-white/10 px-2 py-3`}>
-        <div
-          title="Settings (Coming Soon)"
-          className={`flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-600 ${collapsed ? "justify-center" : ""}`}
+        {/* ── Collapse Toggle (Desktop Only) ── */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden md:flex items-center justify-center border-t border-white/10 py-3 text-stone-600 transition hover:text-stone-300"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
-          {!collapsed && (
-            <>
-              <span className="flex-1">Settings</span>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-stone-500">
-                Soon
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── Collapse Toggle (Desktop Only) ── */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="hidden md:flex items-center justify-center border-t border-white/10 py-3 text-stone-600 transition hover:text-stone-300"
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </button>
-    </aside>
+        </button>
+      </aside>
     </>
   );
 }
