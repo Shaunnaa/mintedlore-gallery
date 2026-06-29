@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import GallerySearch from "./GallerySearch";
 
 export const revalidate = 0;
 
@@ -41,6 +42,11 @@ export default async function NftGalleryPage() {
             Browse NFT collections with custom timeline stories, lore, and curated gallery experiences built by community owners.
           </p>
         </header>
+
+        {/* ── Search Bar ── */}
+        <GallerySearch
+          items={allCommunities.map(c => ({ name: c.name, slug: c.slug, type: "Community" }))}
+        />
 
         {/* ── Grid ── */}
         <section>

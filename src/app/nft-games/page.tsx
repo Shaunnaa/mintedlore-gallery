@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import GamesSearch from "./GamesSearch";
 
 export const revalidate = 0;
 
@@ -68,6 +69,11 @@ export default async function GamesPage() {
             Select a game to explore its characters, ships, and custom lore stories created by community owners.
           </p>
         </header>
+
+        {/* ── Search Bar ── */}
+        <GamesSearch
+          items={communities.map(c => ({ name: c.name, slug: c.slug, type: "Games" }))}
+        />
 
         {/* ── Game Cards Grid ── */}
         <section>

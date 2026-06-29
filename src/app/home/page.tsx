@@ -1,8 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import SearchBar from "@/components/search/SearchBar";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+// removed unused router import
+
+const MOCK_COMMUNITIES = [
+  { name: "IslandDAO", slug: "islanddao", type: "Community" },
+  { name: "MonkeDAO", slug: "monkedao", type: "Community" },
+  { name: "Claynosaurz", slug: "claynosaurz", type: "Community" },
+  { name: "Famous Fox Federation", slug: "famous-fox", type: "Community" },
+  { name: "Mad Lads", slug: "mad-lads", type: "Community" },
+  { name: "Star Atlas", slug: "star-atlas", type: "Game" },
+  { name: "DeGods", slug: "degods", type: "Community" },
+  { name: "Solana Monkey Business", slug: "smb", type: "Community" },
+  { name: "Tensorians", slug: "tensorians", type: "Community" },
+];
 
 const HERO_SLIDES = [
   {
@@ -43,6 +57,9 @@ const HERO_SLIDES = [
 export default function HomeRedesign() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+// Search state moved to SearchBar component
+
+// Dropdown handling moved inside SearchBar
 
   useEffect(() => {
     if (isHovered) return;
@@ -142,6 +159,17 @@ export default function HomeRedesign() {
           ))}
         </div>
       </section>
+
+      {/* Add spacing after hero banner */}
+      <div className="mb-8"></div>
+
+      {/* ── SEARCH & DISCOVERY BAR ── */}
+      <SearchBar
+        placeholder="Search communities, stories, and collections..."
+        filterOptions={["All", "Communities", "Games", "Stories"]}
+        items={MOCK_COMMUNITIES}
+        className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-8 mb-8"
+      />
 
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-12 space-y-20">
         
