@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { getSupabase, mapCollectionRecord, mapStoryRecord } from "@/lib/supabase";
 import GallerySearch from "./GallerySearch";
 import GalleryGrid from "./GalleryGrid";
 
@@ -8,18 +8,20 @@ export const revalidate = 0;
 
 export default async function NftGalleryPage() {
   const supabase = getSupabase();
-  const { data: records } = await supabase
-    .from("communities")
+  
+  const { data: collectionsData } = await supabase
+    .from("collection")
+    .select("*")
+    .eq("category", "nft") // Exclude game collections
+    .order("created_at", { ascending: false });
+
+  const { data: storiesData } = await supabase
+    .from("stories")
     .select("*")
     .order("created_at", { ascending: false });
 
-  const allCommunities = (records || [])
-    .map(mapCommunityRecord)
-    // Exclude game-type communities (e.g. star_atlas)
-    .filter((c) => c.collectionType !== "type_game" && c.collectionAddress !== "star_atlas");
-
-  const typeACommunities = allCommunities.filter(c => c.collectionType === "type_a");
-  const typeBCommunities = allCommunities.filter(c => c.collectionType === "type_b");
+  const typeACommunities = (collectionsData || []).map(mapCollectionRecord);
+  const typeBCommunities = (storiesData || []).map(mapStoryRecord);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50">
@@ -50,7 +52,7 @@ export default async function NftGalleryPage() {
             ...typeACommunities.map(c => ({ name: c.name, slug: c.slug, type: "Collection" })),
             ...typeBCommunities.map(c => ({ name: c.name, slug: c.slug, type: "Story" })),
           ]}
-        />
+        /> 
 
         {/* ── Grid with Filters ── */}
         <GalleryGrid

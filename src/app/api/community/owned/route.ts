@@ -20,13 +20,45 @@ export async function GET(request: Request) {
 
     const supabase = getSupabase();
 
-    const { data, error } = await supabase
-      .from("communities")
-      .select("id, name, slug, collection_type, collection_address, parent_community_id, preferred_view, description, vip_threshold, created_at")
-      .eq("owner_wallet", wallet)
-      .order("created_at", { ascending: true });
+    const { data: collections, error: err1 } = await supabase
+      .from("collection")
+      .select("collection_id, name, slug, collection_address, preferred_view, description, vip_threshold, created_at, category")
+      .eq("wallet_address", wallet);
 
-    if (error) throw error;
+    const { data: stories, error: err2 } = await supabase
+      .from("stories")
+      .select("stories_id, name, slug, collection_address, preferred_view, description, vip_threshold, created_at, collection_id")
+      .eq("wallet_address", wallet);
+
+    if (err1 || err2) throw err1 || err2;
+
+    const mappedCollections = (collections || []).map(c => ({
+      id: c.collection_id,
+      name: c.name,
+      slug: c.slug,
+      collection_address: c.collection_address,
+      preferred_view: c.preferred_view,
+      description: c.description,
+      vip_threshold: c.vip_threshold,
+      created_at: c.created_at,
+      parent_community_id: null,
+      collection_type: (c.collection_address === "star_atlas" || c.category === "game") ? "type_game" : "type_a",
+    }));
+
+    const mappedStories = (stories || []).map(s => ({
+      id: s.stories_id,
+      name: s.name,
+      slug: s.slug,
+      collection_address: s.collection_address,
+      preferred_view: s.preferred_view,
+      description: s.description,
+      vip_threshold: s.vip_threshold,
+      created_at: s.created_at,
+      parent_community_id: s.collection_id,
+      collection_type: "type_b",
+    }));
+
+    const data = [...mappedCollections, ...mappedStories].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     return NextResponse.json({ communities: data ?? [] });
   } catch (err: unknown) {

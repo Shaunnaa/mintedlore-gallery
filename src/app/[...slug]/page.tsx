@@ -4,7 +4,7 @@ import { WalletChecker } from "@/components/wallet/WalletChecker";
 import { HolderBadge } from "@/components/wallet/HolderBadge";
 import { redirect } from "next/navigation";
 import { StarAtlasHub } from "@/components/games/StarAtlasHub";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { getSupabase, mapCollectionRecord, mapStoryRecord } from "@/lib/supabase";
 import {
   fetchActiveListings,
   fetchCollectionStats,
@@ -28,8 +28,17 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const targetSlug = slug[slug.length - 1];
 
   const supabase = getSupabase();
-  const { data: record } = await supabase.from("communities").select("*").eq("slug", targetSlug).maybeSingle();
-  const community = record ? mapCommunityRecord(record) : undefined;
+  let community = undefined;
+  
+  const { data: collectionRecord } = await supabase.from("collection").select("*").eq("slug", targetSlug).maybeSingle();
+  if (collectionRecord) {
+    community = mapCollectionRecord(collectionRecord);
+  } else {
+    const { data: storyRecord } = await supabase.from("stories").select("*").eq("slug", targetSlug).maybeSingle();
+    if (storyRecord) {
+      community = mapStoryRecord(storyRecord);
+    }
+  }
 
   if (!community) {
     return (
@@ -56,14 +65,21 @@ export default async function GroupPage({ params }: GroupPageProps) {
   }
 
   // Fetch related chapters (stories) for this collection
-  const { data: relatedRecords } = await supabase
-    .from("communities")
-    .select("slug, name, description, collection_type, preferred_view")
-    .eq("collection_address", community.collectionAddress)
-    .order("id");
+  let relatedRecords: any[] = [];
+  let parentRecord: any = null;
+
+  if (community.collectionType === "type_b") {
+    const { data: parent } = await supabase.from("collection").select("*").eq("collection_id", community.parentCommunityId).maybeSingle();
+    parentRecord = parent;
+    const { data: stories } = await supabase.from("stories").select("*").eq("collection_id", community.parentCommunityId).order("created_at");
+    relatedRecords = stories || [];
+  } else {
+    parentRecord = collectionRecord; // Since they are on the parent page
+    const { data: stories } = await supabase.from("stories").select("*").eq("collection_id", community.id).order("created_at");
+    relatedRecords = stories || [];
+  }
 
   // Determine parent slug for building nested routes
-  const parentRecord = relatedRecords?.find(r => r.collection_type === "type_a");
   const parentSlug = parentRecord?.slug || community.slug;
 
   // Redirect if someone visits a child directly at the root (e.g., /fox-2 -> /fox/fox-2)
@@ -71,12 +87,20 @@ export default async function GroupPage({ params }: GroupPageProps) {
     redirect(`/${parentSlug}/${community.slug}`);
   }
 
-  const relatedChapters = relatedRecords ? relatedRecords.map(r => ({
-    slug: r.collection_type === "type_a" ? r.slug : `${parentSlug}/${r.slug}`,
-    name: r.name,
-    type: r.collection_type,
-    view: r.preferred_view
-  })) : [];
+  const relatedChapters = [
+    {
+      slug: parentSlug,
+      name: parentRecord?.name || community.name,
+      type: "type_a",
+      view: parentRecord?.preferred_view || community.preferredView
+    },
+    ...relatedRecords.map(r => ({
+      slug: `${parentSlug}/${r.slug}`,
+      name: r.name,
+      type: "type_b",
+      view: r.preferred_view
+    }))
+  ];
 
   // ── Primary Source: DAS API vs Magic Eden ──
   const isDasAddress = community.collectionAddress.length > 30;
@@ -134,9 +158,9 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   if (community.collectionType === "type_b") {
     const { data: nfts } = await supabase
-      .from("community_nfts")
+      .from("stories_selection")
       .select("mint_address")
-      .eq("community_id", community.id);
+      .eq("stories_id", community.id);
 
     if (nfts && nfts.length > 0) {
       const mints = nfts.map(n => n.mint_address);

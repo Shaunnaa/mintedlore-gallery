@@ -42,13 +42,10 @@ export async function POST(request: Request) {
     const supabase = getSupabase();
 
     // ── Duplicate slug check ──────────────────────────────────────────────────
-    const { data: existing } = await supabase
-      .from("communities")
-      .select("id")
-      .eq("slug", slug)
-      .maybeSingle();
+    const { data: existingCollection } = await supabase.from("collection").select("collection_id").eq("slug", slug).maybeSingle();
+    const { data: existingStory } = await supabase.from("stories").select("stories_id").eq("slug", slug).maybeSingle();
 
-    if (existing) {
+    if (existingCollection || existingStory) {
       return NextResponse.json({ error: `Slug "${slug}" is already taken` }, { status: 409 });
     }
 
@@ -71,47 +68,74 @@ export async function POST(request: Request) {
     }
 
     // ── Insert community ──────────────────────────────────────────────────────
-    const { data: community, error: insertError } = await supabase
-      .from("communities")
-      .insert({
-        owner_wallet: ownerWallet,
-        name,
-        slug,
-        description: description ?? "",
-        image: finalImage || null,
-        collection_type: collectionType === "type_game" ? "type_a" : collectionType,
-        collection_address: collectionAddress,
-        parent_community_id: parentCommunityId || null,
-        preferred_view: preferredView ?? "timeline1",
-        vip_threshold: vipThreshold ?? 1,
-        theme_settings: {
-          ...(meSymbol ? { magicEdenSymbol: meSymbol } : {}),
-          ...(collectionType === "type_b" && selectedMints ? { assetIds: selectedMints } : {}),
-          ...(collectionType === "type_b" && assetDescriptions ? { assetDescriptions } : {})
-        },
-      })
-      .select()
-      .single();
+    let community;
+    let insertError;
+
+    if (collectionType === "type_b") {
+      const res = await supabase
+        .from("stories")
+        .insert({
+          wallet_address: ownerWallet,
+          name,
+          slug,
+          description: description ?? "",
+          image: finalImage || null,
+          collection_id: parentCommunityId,
+          collection_address: collectionAddress,
+          preferred_view: preferredView ?? "timeline1",
+          vip_threshold: vipThreshold ?? 1,
+          theme_settings: {
+            ...(meSymbol ? { magicEdenSymbol: meSymbol } : {}),
+            ...(selectedMints ? { assetIds: selectedMints } : {}),
+            ...(assetDescriptions ? { assetDescriptions } : {})
+          },
+        })
+        .select()
+        .single();
+      community = res.data;
+      insertError = res.error;
+    } else {
+      const res = await supabase
+        .from("collection")
+        .insert({
+          wallet_address: ownerWallet,
+          name,
+          slug,
+          description: description ?? "",
+          image: finalImage || null,
+          category: collectionType === "type_game" ? "game" : "nft",
+          collection_address: collectionAddress,
+          preferred_view: preferredView ?? "timeline1",
+          vip_threshold: vipThreshold ?? 1,
+          theme_settings: {
+            ...(meSymbol ? { magicEdenSymbol: meSymbol } : {}),
+          },
+        })
+        .select()
+        .single();
+      community = res.data;
+      insertError = res.error;
+    }
 
     if (insertError) {
-      // Catch the unique constraint on type_a collection_address
       if (insertError.code === "23505") {
         return NextResponse.json(
-          { error: "A Type A community for this Magic Eden collection already exists." },
+          { error: "A community for this collection already exists." },
           { status: 409 }
         );
       }
       throw insertError;
     }
 
-    // ── For Type B: save selected mints to community_nfts ────────────────────
+    // ── For Type B: save selected mints to stories_selection ────────────────────
     if (collectionType === "type_b" && selectedMints.length > 0) {
       const rows = (selectedMints as string[]).map((mint) => ({
-        community_id: community.id,
+        stories_id: community.stories_id,
+        collection_id: parentCommunityId,
         mint_address: mint,
       }));
 
-      const { error: nftError } = await supabase.from("community_nfts").insert(rows);
+      const { error: nftError } = await supabase.from("stories_selection").insert(rows);
       if (nftError) throw nftError;
     }
 
