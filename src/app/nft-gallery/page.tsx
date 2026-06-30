@@ -37,17 +37,17 @@ export default async function NftGalleryPage() {
           </div>
 
           <h1 className="mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-6xl">
-            Explore Community Stories
+            Explore collections & Stories
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-stone-400">
-            Browse NFT collections with custom timeline stories, lore, and curated gallery experiences built by community owners.
+            Browse NFT collections with custom timeline stories, lore, and curated gallery experiences built by owners.
           </p>
         </header>
 
         {/* ── Search Bar ── */}
         <GallerySearch
           items={[
-            ...typeACommunities.map(c => ({ name: c.name, slug: c.slug, type: "Community" })),
+            ...typeACommunities.map(c => ({ name: c.name, slug: c.slug, type: "Collection" })),
             ...typeBCommunities.map(c => ({ name: c.name, slug: c.slug, type: "Story" })),
           ]}
         />

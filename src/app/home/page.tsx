@@ -7,15 +7,15 @@ import { useState, useEffect } from "react";
 // removed unused router import
 
 const MOCK_COMMUNITIES = [
-  { name: "IslandDAO", slug: "islanddao", type: "Community" },
-  { name: "MonkeDAO", slug: "monkedao", type: "Community" },
-  { name: "Claynosaurz", slug: "claynosaurz", type: "Community" },
-  { name: "Famous Fox Federation", slug: "famous-fox", type: "Community" },
-  { name: "Mad Lads", slug: "mad-lads", type: "Community" },
+  { name: "IslandDAO", slug: "islanddao", type: "Collection" },
+  { name: "MonkeDAO", slug: "monkedao", type: "Collection" },
+  { name: "Claynosaurz", slug: "claynosaurz", type: "Collection" },
+  { name: "Famous Fox Federation", slug: "famous-fox", type: "Collection" },
+  { name: "Mad Lads", slug: "mad-lads", type: "Collection" },
   { name: "Star Atlas", slug: "star-atlas", type: "Game" },
-  { name: "DeGods", slug: "degods", type: "Community" },
-  { name: "Solana Monkey Business", slug: "smb", type: "Community" },
-  { name: "Tensorians", slug: "tensorians", type: "Community" },
+  { name: "DeGods", slug: "degods", type: "Collection" },
+  { name: "Solana Monkey Business", slug: "smb", type: "Collection" },
+  { name: "Tensorians", slug: "tensorians", type: "Collection" },
 ];
 
 const HERO_SLIDES = [
@@ -165,8 +165,8 @@ export default function HomeRedesign() {
 
       {/* ── SEARCH & DISCOVERY BAR ── */}
       <SearchBar
-        placeholder="Search communities, stories, and collections..."
-        filterOptions={["All", "Communities", "Games", "Stories"]}
+        placeholder="Search collections, games, and stories..."
+        filterOptions={["All", "Collection", "Games", "Stories"]}
         items={MOCK_COMMUNITIES}
         className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-8 mb-8"
       />
@@ -214,7 +214,7 @@ export default function HomeRedesign() {
           {/* ── 3. TOP TRENDING (Top Read) ── */}
           <section className="lg:col-span-2">
             <div className="mb-8 border-b border-white/10 pb-4">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Trending Communities</h2>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Top Read Collections</h2>
               <p className="text-sm text-stone-400 mt-1">The most read and collected lore this week.</p>
             </div>
             

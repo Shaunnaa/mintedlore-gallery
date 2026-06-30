@@ -53,7 +53,7 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
             All Collections
           </p>
           <h2 className="mt-1 text-2xl font-semibold text-white">
-            {filtered.length} {filtered.length === 1 ? "Community" : "Communities"}
+            {filtered.length} {filtered.length === 1 ? "Collection" : "Collections"}
           </h2>
         </div>
 

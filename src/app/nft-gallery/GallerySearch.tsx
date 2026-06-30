@@ -9,8 +9,8 @@ interface Props {
 export default function GallerySearch({ items }: Props) {
   return (
     <SearchBar
-      placeholder="Search NFT communities and stories..."
-      filterOptions={["All", "Community", "Story"]}
+      placeholder="Search NFT collections and stories..."
+      filterOptions={["All", "Collection", "Story"]}
       items={items}
       className="mt-6"
     />
