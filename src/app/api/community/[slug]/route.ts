@@ -23,18 +23,32 @@ export async function PUT(
 
     const supabase = getSupabase();
 
-    // Verify ownership before updating
+    // Check collection first
     const { slug } = await params;
-    const { data: community } = await supabase
-      .from("communities")
-      .select("id, owner_wallet, collection_type")
+    let table = "collection";
+    let { data: community } = await supabase
+      .from("collection")
+      .select("collection_id as id, wallet_address, category")
       .eq("slug", slug)
       .maybeSingle();
 
     if (!community) {
+      table = "stories";
+      const { data: story } = await supabase
+        .from("stories")
+        .select("stories_id as id, wallet_address")
+        .eq("slug", slug)
+        .maybeSingle();
+      community = story;
+    }
+
+    if (!community) {
       return NextResponse.json({ error: "Community not found" }, { status: 404 });
     }
-    if (community.owner_wallet !== ownerWallet) {
+    
+    // Admins bypass ownership check
+    const { data: userRole } = await supabase.from("app_users").select("role").eq("wallet_address", ownerWallet).maybeSingle();
+    if (community.wallet_address !== ownerWallet && userRole?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -47,7 +61,7 @@ export async function PUT(
     if (image          !== undefined) updates.image = image;
 
     const { data, error } = await supabase
-      .from("communities")
+      .from(table)
       .update(updates)
       .eq("slug", slug)
       .select()
@@ -55,17 +69,20 @@ export async function PUT(
 
     if (error) throw error;
 
-    // Sync community_nfts if this is a type_b community
-    if (community.collection_type === "type_b" && themeSettings?.assetIds) {
-      // Remove all existing to ensure clean sync of order/removals
-      await supabase.from("community_nfts").delete().eq("community_id", community.id);
+    // Sync stories_selection if this is a stories table update
+    if (table === "stories" && themeSettings?.assetIds) {
+      await supabase.from("stories_selection").delete().eq("stories_id", community.id);
       
       if (themeSettings.assetIds.length > 0) {
+        // Need to get collection_id for the stories_selection insert
+        const { data: fullStory } = await supabase.from("stories").select("collection_id").eq("stories_id", community.id).single();
+        
         const rows = themeSettings.assetIds.map((mint: string) => ({
-          community_id: community.id,
+          stories_id: community.id,
+          collection_id: fullStory?.collection_id,
           mint_address: mint,
         }));
-        const { error: nftError } = await supabase.from("community_nfts").insert(rows);
+        const { error: nftError } = await supabase.from("stories_selection").insert(rows);
         if (nftError) throw nftError;
       }
     }
