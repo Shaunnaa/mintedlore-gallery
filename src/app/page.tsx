@@ -57,19 +57,39 @@ const HERO_SLIDES = [
 export default function HomeRedesign() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-// Search state moved to SearchBar component
+  const [heroSlides, setHeroSlides] = useState<any[]>(HERO_SLIDES); // Fallback to mock if db empty
+  const [sidebarAd, setSidebarAd] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/promotions")
+      .then(async r => {
+        if (!r.ok) throw new Error("Failed to fetch promotions");
+        const text = await r.text();
+        return text ? JSON.parse(text) : {};
+      })
+      .then(d => {
+        if (d.promotions) {
+          const hero = d.promotions.filter((p: any) => p.placement === "hero");
+          if (hero.length > 0) setHeroSlides(hero);
+          
+          const sidebar = d.promotions.find((p: any) => p.placement === "sidebar");
+          if (sidebar) setSidebarAd(sidebar);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
 // Dropdown handling moved inside SearchBar
 
   useEffect(() => {
     if (isHovered) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [isHovered]);
+  }, [isHovered, heroSlides]);
 
-  const slide = HERO_SLIDES[currentSlide];
+  const slide = heroSlides[currentSlide];
 
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50 font-sans pb-20">
@@ -82,19 +102,19 @@ export default function HomeRedesign() {
       >
         {/* Background Image & Overlays */}
         <div className={`absolute inset-0 bg-neutral-950 transition-colors duration-1000`}>
-           {HERO_SLIDES.map((s, index) => (
+           {heroSlides.map((s, index) => (
              <div 
                key={index} 
                className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? "opacity-100" : "opacity-0"}`}
              >
                <Image 
-                 src={s.imgUrl} 
+                 src={s.imgUrl || s.image_url} 
                  alt={s.title} 
                  fill 
                  className="object-cover opacity-50"
                  unoptimized
                />
-               <div className={`absolute inset-0 bg-gradient-to-br ${s.bgClass} to-transparent mix-blend-multiply`}></div>
+               <div className={`absolute inset-0 bg-gradient-to-br ${s.bgClass || "from-emerald-900/80"} to-transparent mix-blend-multiply`}></div>
              </div>
            ))}
            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay z-10"></div>
@@ -106,16 +126,14 @@ export default function HomeRedesign() {
 
         {/* Manual Slide Arrows */}
         <button 
-          onClick={() => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+          onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
           className="absolute left-5 sm:left-8 top-1/2 -translate-y-1/2 z-20 h-10 w-10 flex items-center justify-center rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/50 transition backdrop-blur-sm opacity-0 group-hover:opacity-100"
-          aria-label="Previous Slide"
         >
           <svg className="w-5 h-5 pr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <button 
-          onClick={() => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+          onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
           className="absolute right-5 sm:right-8 top-1/2 -translate-y-1/2 z-20 h-10 w-10 flex items-center justify-center rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/50 transition backdrop-blur-sm opacity-0 group-hover:opacity-100"
-          aria-label="Next Slide"
         >
           <svg className="w-5 h-5 pl-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
         </button>
@@ -123,31 +141,41 @@ export default function HomeRedesign() {
         <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 pb-16 pl-20 sm:pl-28">
           
           <div key={currentSlide} className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 mb-6 backdrop-blur-md">
-              <span className="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
-              <span className="text-xs font-bold uppercase tracking-widest text-stone-200">{slide.tag}</span>
-            </div>
+            {(slide.tag || slide.badge_text) && (
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 mb-6 backdrop-blur-md">
+                <span className="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                <span className="text-xs font-bold uppercase tracking-widest text-stone-200">{slide.tag || slide.badge_text}</span>
+              </div>
+            )}
             
             <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-4 max-w-3xl">
-              {slide.title.replace(slide.highlight, "")} <span className="text-white brightness-150 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{slide.highlight}</span>
+              {slide.highlight ? (
+                <>{slide.title.replace(slide.highlight, "")} <span className="text-white brightness-150 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{slide.highlight}</span></>
+              ) : (
+                <>{slide.title}</>
+              )}
             </h1>
             <p className="text-lg text-stone-300 max-w-2xl mb-8 leading-relaxed">
-              {slide.desc}
+              {slide.desc || slide.description}
             </p>
             <div className="flex items-center gap-4">
-              <Link href={slide.link} className="rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-black transition hover:bg-stone-200 hover:scale-105 transform duration-200">
-                {slide.btn1}
-              </Link>
-              <Link href={slide.link} className="rounded-xl bg-white/5 border border-white/10 px-8 py-3.5 text-sm font-bold text-white transition hover:bg-white/10">
-                {slide.btn2}
-              </Link>
+              {(slide.btn1 || slide.button_text) && (
+                <Link href={slide.link || slide.button_url || "#"} className="rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-black transition hover:bg-stone-200 hover:scale-105 transform duration-200">
+                  {slide.btn1 || slide.button_text}
+                </Link>
+              )}
+              {(slide.btn2 || slide.button_2_text) && (
+                <Link href={slide.link || slide.button_2_url || "#"} className="rounded-xl bg-white/5 border border-white/10 px-8 py-3.5 text-sm font-bold text-white transition hover:bg-white/10">
+                  {slide.btn2 || slide.button_2_text}
+                </Link>
+              )}
             </div>
           </div>
         </div>
 
         {/* Carousel Indicators */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-          {HERO_SLIDES.map((_, index) => (
+          {heroSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
@@ -249,21 +277,31 @@ export default function HomeRedesign() {
 
           {/* ── 4. PROMOTIONAL AD ── */}
           <section className="lg:col-span-1">
-             <div className="h-full w-full rounded-3xl bg-gradient-to-b from-stone-900 to-black border border-white/10 p-8 flex flex-col items-center text-center justify-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-3">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-stone-600">Sponsored</span>
-                </div>
+             <div className="h-full w-full rounded-3xl bg-gradient-to-b from-stone-900 to-black border border-white/10 p-8 flex flex-col items-center text-center justify-center relative overflow-hidden group">
                 
-                <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6 border border-emerald-500/30">
-                  <span className="text-3xl">🏛️</span>
+                {sidebarAd?.image_url && (
+                  <div className="absolute inset-0 z-0">
+                    <img src={sidebarAd.image_url} alt="Background" className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500 mix-blend-overlay" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+                  </div>
+                )}
+                
+                <div className="relative z-10 w-full flex flex-col items-center">
+                  <div className="absolute -top-4 -right-4 p-3">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">{sidebarAd?.badge_text || "Sponsored"}</span>
+                  </div>
+                  
+                  <div className="h-16 w-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6 border border-emerald-500/30">
+                    <span className="text-2xl">🏛️</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">{sidebarAd?.title || "Build Your Hub"}</h3>
+                  <p className="text-sm text-stone-400 mb-8 leading-relaxed">
+                    {sidebarAd?.description || "Is your NFT collection missing a home? Create a branded community page and start publishing lore in minutes."}
+                  </p>
+                  <Link href={sidebarAd?.button_url || "/studio"} className="w-full rounded-xl bg-white text-black px-6 py-3.5 text-sm font-bold hover:bg-stone-200 transition-colors">
+                    {sidebarAd?.button_text || "Start Building — It's Free"}
+                  </Link>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Build Your Hub</h3>
-                <p className="text-sm text-stone-400 mb-8 leading-relaxed">
-                  Is your NFT collection missing a home? Create a branded community page and start publishing lore in minutes.
-                </p>
-                <Link href="/studio" className="w-full rounded-xl bg-white text-black px-6 py-3.5 text-sm font-bold hover:bg-stone-200 transition-colors">
-                  Start Building — It's Free
-                </Link>
              </div>
           </section>
         </div>
