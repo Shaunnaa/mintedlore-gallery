@@ -6,59 +6,12 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 // removed unused router import
 
-const MOCK_COMMUNITIES = [
-  { name: "IslandDAO", slug: "islanddao", type: "Collection" },
-  { name: "MonkeDAO", slug: "monkedao", type: "Collection" },
-  { name: "Claynosaurz", slug: "claynosaurz", type: "Collection" },
-  { name: "Famous Fox Federation", slug: "famous-fox", type: "Collection" },
-  { name: "Mad Lads", slug: "mad-lads", type: "Collection" },
-  { name: "Star Atlas", slug: "star-atlas", type: "Game" },
-  { name: "DeGods", slug: "degods", type: "Collection" },
-  { name: "Solana Monkey Business", slug: "smb", type: "Collection" },
-  { name: "Tensorians", slug: "tensorians", type: "Collection" },
-];
-
-const HERO_SLIDES = [
-  {
-    tag: "Featured Story",
-    title: "The Lost Archives of IslandDAO",
-    highlight: "IslandDAO",
-    desc: "Discover the origins of the Citizens and the mysterious energy source hidden deep within the archipelago. Only true holders can unlock the final chapter.",
-    link: "/islanddao",
-    btn1: "Read Chapter 1",
-    btn2: "View Collection",
-    bgClass: "from-emerald-900/80",
-    imgUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop" // Mock Island Landscape
-  },
-  {
-    tag: "New Game Integration",
-    title: "Explore the vast universe of Star Atlas",
-    highlight: "Star Atlas",
-    desc: "Sync your wallet to reveal hidden ship schematics and exclusive faction lore. The galaxy awaits your discovery.",
-    link: "/star-atlas",
-    btn1: "Enter the Galaxy",
-    btn2: "View Stats",
-    bgClass: "from-blue-900/80",
-    imgUrl: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2048&auto=format&fit=crop" // Mock Space Background
-  },
-  {
-    tag: "Platform News",
-    title: "Monetize Your Community Lore",
-    highlight: "New Feature",
-    desc: "Community owners can now enable affiliate fees for secondary market sales directly within their storytelling hubs.",
-    link: "/studio",
-    btn1: "Learn More",
-    btn2: "Update Hub",
-    bgClass: "from-purple-900/80",
-    imgUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" // Mock Cyber Background
-  }
-];
-
 export default function HomeRedesign() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentSidebarSlide, setCurrentSidebarSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [heroSlides, setHeroSlides] = useState<any[]>(HERO_SLIDES); // Fallback to mock if db empty
-  const [sidebarAd, setSidebarAd] = useState<any>(null);
+  const [heroSlides, setHeroSlides] = useState<any[]>([]);
+  const [sidebarAds, setSidebarAds] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/promotions")
@@ -72,8 +25,8 @@ export default function HomeRedesign() {
           const hero = d.promotions.filter((p: any) => p.placement === "hero");
           if (hero.length > 0) setHeroSlides(hero);
           
-          const sidebar = d.promotions.find((p: any) => p.placement === "sidebar");
-          if (sidebar) setSidebarAd(sidebar);
+          const sidebar = d.promotions.filter((p: any) => p.placement === "sidebar");
+          if (sidebar.length > 0) setSidebarAds(sidebar);
         }
       })
       .catch(console.error);
@@ -85,16 +38,18 @@ export default function HomeRedesign() {
     if (isHovered) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      setCurrentSidebarSlide((prev) => (prev + 1) % sidebarAds.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [isHovered, heroSlides]);
+  }, [isHovered, heroSlides, sidebarAds]);
 
   const slide = heroSlides[currentSlide];
 
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50 font-sans pb-20">
       
-      {/* ── 1. HERO BANNER (Auto-sliding Carousel) ── */}
+      {/* ── 1. HERO SLIDER ── */}
+      {heroSlides.length > 0 && (
       <section 
         className="group relative w-full h-[60vh] min-h-[500px] bg-stone-900 overflow-hidden flex items-end transition-colors duration-1000"
         onMouseEnter={() => setIsHovered(true)}
@@ -187,6 +142,7 @@ export default function HomeRedesign() {
           ))}
         </div>
       </section>
+      )}
 
       {/* Add spacing after hero banner */}
       <div className="mb-8"></div>
@@ -195,7 +151,7 @@ export default function HomeRedesign() {
       <SearchBar
         placeholder="Search collections, games, and stories..."
         filterOptions={["All", "Collection", "Games", "Stories"]}
-        items={MOCK_COMMUNITIES}
+        items={[]}
         className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-8 mb-8"
       />
 
@@ -208,7 +164,7 @@ export default function HomeRedesign() {
               <h2 className="text-2xl font-bold text-white tracking-tight">Newly Minted Lore</h2>
               <p className="text-sm text-stone-400 mt-1">The latest chapters published across the ecosystem.</p>
             </div>
-            <Link href="#" className="text-sm font-bold text-emerald-400 hover:text-emerald-300 hidden sm:block">View All</Link>
+            <Link href="/nft-gallery" className="text-sm font-bold text-emerald-400 hover:text-emerald-300 hidden sm:block">View All</Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -275,34 +231,50 @@ export default function HomeRedesign() {
             </div>
           </section>
 
-          {/* ── 4. PROMOTIONAL AD ── */}
-          <section className="lg:col-span-1">
-             <div className="h-full w-full rounded-3xl bg-gradient-to-b from-stone-900 to-black border border-white/10 p-8 flex flex-col items-center text-center justify-center relative overflow-hidden group">
+          {/* ── 4. PROMOTIONAL ADS (SIDEBAR) ── */}
+          <section className="lg:col-span-1 flex flex-col gap-6">
+             {sidebarAds.length > 0 && (
+             <div className="w-full h-full rounded-3xl bg-gradient-to-b from-stone-900 to-black border border-white/10 p-8 flex flex-col items-center text-center justify-center relative overflow-hidden group min-h-[400px]">
                 
-                {sidebarAd?.image_url && (
+                {sidebarAds[currentSidebarSlide].image_url && (
                   <div className="absolute inset-0 z-0">
-                    <img src={sidebarAd.image_url} alt="Background" className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500 mix-blend-overlay" />
+                    <img src={sidebarAds[currentSidebarSlide].image_url} alt="Background" className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
                   </div>
                 )}
                 
                 <div className="relative z-10 w-full flex flex-col items-center">
                   <div className="absolute -top-4 -right-4 p-3">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">{sidebarAd?.badge_text || "Sponsored"}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">{sidebarAds[currentSidebarSlide].badge_text || ""}</span>
                   </div>
                   
-                  <div className="h-16 w-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6 border border-emerald-500/30">
-                    <span className="text-2xl">🏛️</span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">{sidebarAd?.title || "Build Your Hub"}</h3>
-                  <p className="text-sm text-stone-400 mb-8 leading-relaxed">
-                    {sidebarAd?.description || "Is your NFT collection missing a home? Create a branded community page and start publishing lore in minutes."}
+                  <h3 className="text-2xl font-bold text-white mb-3 mt-4">{sidebarAds[currentSidebarSlide].title || "Build Your Hub"}</h3>
+                  <p className="text-sm text-stone-400 mb-8 leading-relaxed line-clamp-3">
+                    {sidebarAds[currentSidebarSlide].description || "Is your NFT collection missing a home? Create a branded community page and start publishing lore in minutes."}
                   </p>
-                  <Link href={sidebarAd?.button_url || "/studio"} className="w-full rounded-xl bg-white text-black px-6 py-3.5 text-sm font-bold hover:bg-stone-200 transition-colors">
-                    {sidebarAd?.button_text || "Start Building — It's Free"}
-                  </Link>
+                  
+                  {(sidebarAds[currentSidebarSlide].button_text || sidebarAds[currentSidebarSlide].button_url) && (
+                    <Link href={sidebarAds[currentSidebarSlide].button_url || "#"} className="w-full rounded-xl bg-white text-black px-6 py-3.5 text-sm font-bold hover:bg-stone-200 transition-colors">
+                      {sidebarAds[currentSidebarSlide].button_text || "Learn More"}
+                    </Link>
+                  )}
                 </div>
-             </div>
+
+                {sidebarAds.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                    {sidebarAds.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentSidebarSlide(index)}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          currentSidebarSlide === index ? "w-6 bg-emerald-400" : "w-1.5 bg-white/20 hover:bg-white/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+             )}
           </section>
         </div>
 
