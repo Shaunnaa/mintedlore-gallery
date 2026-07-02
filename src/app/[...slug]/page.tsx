@@ -179,7 +179,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
   return (
     <main className="min-h-screen w-full bg-neutral-950 font-sans text-stone-50 selection:bg-emerald-500/30">
       <ViewTracker 
-        collection_id={isCollection ? community.id : undefined} 
+        collection_id={isCollection ? community.id : (isStory ? community.parentCommunityId : undefined)} 
         stories_id={isStory ? community.id : undefined} 
       />
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">

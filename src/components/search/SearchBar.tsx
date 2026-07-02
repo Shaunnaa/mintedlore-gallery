@@ -35,9 +35,9 @@ export default function SearchBar({
 
   const filtered = searchQuery.trim().length > 0
     ? items.filter((c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (activeFilter === "All" || c.type === activeFilter)
-      )
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (activeFilter === "All" || c.type === activeFilter)
+    )
     : [];
 
   // Close dropdown when clicking outside

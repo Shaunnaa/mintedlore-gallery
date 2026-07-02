@@ -12,6 +12,9 @@ export default function HomeRedesign() {
   const [isHovered, setIsHovered] = useState(false);
   const [heroSlides, setHeroSlides] = useState<any[]>([]);
   const [sidebarAds, setSidebarAds] = useState<any[]>([]);
+  const [recentStories, setRecentStories] = useState<any[]>([]);
+  const [topCollections, setTopCollections] = useState<any[]>([]);
+  const [topStories, setTopStories] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("/api/promotions")
@@ -28,6 +31,20 @@ export default function HomeRedesign() {
           const sidebar = d.promotions.filter((p: any) => p.placement === "sidebar");
           if (sidebar.length > 0) setSidebarAds(sidebar);
         }
+      })
+      .catch(console.error);
+
+    // Fetch Dynamic Homepage Content
+    fetch("/api/homepage")
+      .then(async r => {
+        if (!r.ok) throw new Error("Failed to fetch homepage data");
+        const text = await r.text();
+        return text ? JSON.parse(text) : {};
+      })
+      .then(d => {
+        if (d.recentStories) setRecentStories(d.recentStories);
+        if (d.topCollections) setTopCollections(d.topCollections);
+        if (d.topStories) setTopStories(d.topStories);
       })
       .catch(console.error);
   }, []);
@@ -159,66 +176,127 @@ export default function HomeRedesign() {
         
         {/* ── 2. NEWLY MINTED LORE (New Stories) ── */}
         <section>
-          <div className="flex items-end justify-between mb-8 border-b border-white/10 pb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Newly Minted Lore</h2>
-              <p className="text-sm text-stone-400 mt-1">The latest chapters published across the ecosystem.</p>
-            </div>
-            <Link href="/nft-gallery" className="text-sm font-bold text-emerald-400 hover:text-emerald-300 hidden sm:block">View All</Link>
+          <div className="mb-8 border-b border-white/10 pb-4">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Newly Minted Lore</h2>
+            <p className="text-sm text-stone-400 mt-1">The latest chapters published across the ecosystem.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: "The Great Fox Migration", community: "Famous Fox Federation", tag: "Chapter 3", time: "2 hours ago" },
-              { title: "Arrival at the Station", community: "Star Atlas", tag: "Prologue", time: "5 hours ago" },
-              { title: "Birth of the Lads", community: "Mad Lads", tag: "Lore Update", time: "1 day ago" },
-              { title: "The First Dinosaur", community: "Claynosaurz", tag: "Chapter 1", time: "2 days ago" },
-            ].map((story, i) => (
-              <Link href="#" key={i} className="group flex flex-col gap-4">
+            {recentStories.length > 0 ? recentStories.map((story, i) => {
+              const communityName = Array.isArray(story.collection) 
+                ? story.collection[0]?.name 
+                : story.collection?.name || "Unknown";
+                
+              // Rough mock formatting for time ago
+              const publishDate = new Date(story.created_at);
+              const isRecent = (Date.now() - publishDate.getTime()) < 86400000;
+              const timeDisplay = isRecent ? "Today" : publishDate.toLocaleDateString();
+
+              return (
+              <Link href={`/${story.slug}`} key={i} className="group flex flex-col gap-4">
                 <div className="aspect-[4/3] w-full rounded-2xl bg-stone-900 border border-white/10 overflow-hidden relative group-hover:border-emerald-500/50 transition-colors">
-                   <div className="absolute inset-0 flex items-center justify-center text-stone-700 font-bold uppercase tracking-widest text-xs">
-                     {story.community.substring(0,3)}
-                   </div>
+                   {story.image ? (
+                     <img src={story.image} alt={story.name} className="w-full h-full object-cover opacity-80" />
+                   ) : (
+                     <div className="absolute inset-0 flex items-center justify-center text-stone-700 font-bold uppercase tracking-widest text-xs">
+                       {communityName.substring(0,3)}
+                     </div>
+                   )}
                    <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
-                     {story.tag}
+                     Chapter
                    </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-500 mb-1">{story.community}</p>
-                  <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">{story.title}</h3>
-                  <p className="text-xs text-stone-500 mt-2">{story.time}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-500 mb-1">{communityName}</p>
+                  <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">{story.name}</h3>
+                  <p className="text-xs text-stone-500 mt-2">{timeDisplay}</p>
                 </div>
               </Link>
-            ))}
+            )}) : (
+              <div className="col-span-full py-12 text-center border border-white/10 border-dashed rounded-2xl text-stone-500">
+                No recent stories published yet.
+              </div>
+            )}
           </div>
         </section>
+        
+        {/* Add spacing between Recent Lore and Ad Banner */}
+        <div className="mb-12"></div>
 
+        {/* ── 3. PROMOTED AD (Middle Banner) ── */}
+        {sidebarAds.length > 0 && (
+          <section className="mb-16 w-full h-[200px] sm:h-[250px] rounded-3xl bg-gradient-to-r from-stone-900 to-black border border-white/10 overflow-hidden relative group flex items-center justify-center">
+            {sidebarAds.map((ad, idx) => (
+              <div 
+                key={idx}
+                className={`absolute inset-0 flex items-center transition-all duration-1000 ease-in-out ${
+                  idx === currentSidebarSlide ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+                }`}
+              >
+                {/* Background Image with horizontal gradient fade */}
+                {ad.image_url && (
+                  <div className="absolute inset-0 z-0">
+                    <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-700 mix-blend-overlay" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+                  </div>
+                )}
+                
+                <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between px-8 sm:px-12 lg:px-20 gap-6">
+                  <div className="text-center md:text-left max-w-xl">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-2 block">
+                      {ad.badge_text || "Sponsored"}
+                    </span>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{ad.title || "Build Your Hub"}</h3>
+                    <p className="text-sm text-stone-300 line-clamp-2">{ad.description}</p>
+                  </div>
+                  
+                  {(ad.button_url || ad.button_text) && (
+                    <Link href={ad.button_url || "#"} className="shrink-0 h-12 px-8 flex items-center justify-center bg-white text-black font-bold rounded-xl hover:bg-emerald-400 transition-colors">
+                      {ad.button_text || "Learn More"}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            {/* Horizontal Pagination Dots */}
+            {sidebarAds.length > 1 && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+                {sidebarAds.map((_, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => setCurrentSidebarSlide(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSidebarSlide ? "w-6 bg-emerald-400" : "w-1.5 bg-white/30 hover:bg-white/50"}`}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
-        <div className="grid lg:grid-cols-3 gap-12 lg:gap-8">
-          {/* ── 3. TOP TRENDING (Top Read) ── */}
-          <section className="lg:col-span-2">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+          {/* ── 4. TOP TRENDING COLLECTIONS ── */}
+          <section>
             <div className="mb-8 border-b border-white/10 pb-4">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Top Read Collections</h2>
-              <p className="text-sm text-stone-400 mt-1">The most read and collected lore this week.</p>
+              <h2 className="text-xl font-bold text-white tracking-tight">Top Collections</h2>
+              <p className="text-sm text-stone-400 mt-1">Most read hubs this week.</p>
             </div>
             
             <div className="flex flex-col gap-4">
-              {[
-                { rank: 1, name: "MonkeDAO", readers: "12.4k", unlocked: "85%" },
-                { rank: 2, name: "IslandDAO", readers: "8.2k", unlocked: "42%" },
-                { rank: 3, name: "Solana Monkey Business", readers: "6.1k", unlocked: "90%" },
-                { rank: 4, name: "DeGods", readers: "5.5k", unlocked: "12%" },
-              ].map((comm) => (
-                <Link href="#" key={comm.rank} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
-                  <div className="text-2xl font-black text-stone-700 w-8 text-center">{comm.rank}</div>
-                  <div className="h-14 w-14 rounded-xl bg-stone-800 shrink-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-stone-600">{comm.name.substring(0,2).toUpperCase()}</span>
+              {topCollections.length > 0 ? topCollections.map((comm, index) => (
+                <Link href={`/${comm.slug}`} key={comm.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
+                  <div className="text-2xl font-black text-stone-700 w-8 text-center">{index + 1}</div>
+                  <div className="h-14 w-14 rounded-xl bg-stone-800 shrink-0 flex items-center justify-center overflow-hidden">
+                    {comm.image && comm.image !== "/window.svg" ? (
+                      <img src={comm.image} alt={comm.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-stone-600">{comm.name.substring(0,2).toUpperCase()}</span>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-white">{comm.name}</h3>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-stone-400">
-                      <span>👁️ {comm.readers} Readers</span>
-                      <span>🔓 {comm.unlocked} VIP Unlocks</span>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-stone-400">
+                      <span>👁️ {comm.total_views} Views</span>
                     </div>
                   </div>
                   <div className="hidden sm:block">
@@ -227,54 +305,50 @@ export default function HomeRedesign() {
                     </button>
                   </div>
                 </Link>
-              ))}
+              )) : (
+                <div className="py-12 text-center border border-white/10 border-dashed rounded-2xl text-stone-500">
+                  No reading data available for this week.
+                </div>
+              )}
             </div>
           </section>
 
-          {/* ── 4. PROMOTIONAL ADS (SIDEBAR) ── */}
-          <section className="lg:col-span-1 flex flex-col gap-6">
-             {sidebarAds.length > 0 && (
-             <div className="w-full h-full rounded-3xl bg-gradient-to-b from-stone-900 to-black border border-white/10 p-8 flex flex-col items-center text-center justify-center relative overflow-hidden group min-h-[400px]">
-                
-                {sidebarAds[currentSidebarSlide].image_url && (
-                  <div className="absolute inset-0 z-0">
-                    <img src={sidebarAds[currentSidebarSlide].image_url} alt="Background" className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500 mix-blend-overlay" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+          {/* ── 4. TOP TRENDING STORIES ── */}
+          <section>
+            <div className="mb-8 border-b border-white/10 pb-4">
+              <h2 className="text-xl font-bold text-white tracking-tight">Top Stories</h2>
+              <p className="text-sm text-stone-400 mt-1">Most read chapters this week.</p>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              {topStories.length > 0 ? topStories.map((story, index) => (
+                <Link href={`/${story.slug}`} key={story.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
+                  <div className="text-2xl font-black text-stone-700 w-8 text-center">{index + 1}</div>
+                  <div className="h-14 w-14 rounded-xl bg-stone-800 shrink-0 flex items-center justify-center overflow-hidden">
+                    {story.image && story.image !== "/window.svg" ? (
+                      <img src={story.image} alt={story.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-stone-600">{story.name.substring(0,2).toUpperCase()}</span>
+                    )}
                   </div>
-                )}
-                
-                <div className="relative z-10 w-full flex flex-col items-center">
-                  <div className="absolute -top-4 -right-4 p-3">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-stone-500">{sidebarAds[currentSidebarSlide].badge_text || ""}</span>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white line-clamp-1">{story.name}</h3>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-stone-400">
+                      <span>👁️ {story.total_views} Views</span>
+                    </div>
                   </div>
-                  
-                  <h3 className="text-2xl font-bold text-white mb-3 mt-4">{sidebarAds[currentSidebarSlide].title || "Build Your Hub"}</h3>
-                  <p className="text-sm text-stone-400 mb-8 leading-relaxed line-clamp-3">
-                    {sidebarAds[currentSidebarSlide].description || "Is your NFT collection missing a home? Create a branded community page and start publishing lore in minutes."}
-                  </p>
-                  
-                  {(sidebarAds[currentSidebarSlide].button_text || sidebarAds[currentSidebarSlide].button_url) && (
-                    <Link href={sidebarAds[currentSidebarSlide].button_url || "#"} className="w-full rounded-xl bg-white text-black px-6 py-3.5 text-sm font-bold hover:bg-stone-200 transition-colors">
-                      {sidebarAds[currentSidebarSlide].button_text || "Learn More"}
-                    </Link>
-                  )}
+                  <div className="hidden sm:block">
+                    <button className="rounded-full bg-emerald-500/10 text-emerald-400 px-4 py-1.5 text-xs font-bold hover:bg-emerald-500 hover:text-black transition-colors">
+                      Read Story
+                    </button>
+                  </div>
+                </Link>
+              )) : (
+                <div className="py-12 px-4 text-center border border-white/10 border-dashed rounded-2xl text-stone-500 text-sm">
+                  No reading data available for this week.
                 </div>
-
-                {sidebarAds.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                    {sidebarAds.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentSidebarSlide(index)}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          currentSidebarSlide === index ? "w-6 bg-emerald-400" : "w-1.5 bg-white/20 hover:bg-white/40"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-             )}
+              )}
+            </div>
           </section>
         </div>
 
