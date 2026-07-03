@@ -1,167 +1,97 @@
-"use client";
-
 import Link from "next/link";
 import SearchBar from "@/components/search/SearchBar";
-import Image from "next/image";
-import { useState, useEffect } from "react";
-// removed unused router import
+import { getSupabase } from "@/lib/supabase";
+import HeroSlider from "@/components/home/HeroSlider";
+import AdBanner from "@/components/home/AdBanner";
 
-export default function HomeRedesign() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentSidebarSlide, setCurrentSidebarSlide] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [heroSlides, setHeroSlides] = useState<any[]>([]);
-  const [sidebarAds, setSidebarAds] = useState<any[]>([]);
-  const [recentStories, setRecentStories] = useState<any[]>([]);
-  const [topCollections, setTopCollections] = useState<any[]>([]);
-  const [topStories, setTopStories] = useState<any[]>([]);
+export const revalidate = 0; // Prevent Next.js from aggressively caching the homepage so views update
 
-  useEffect(() => {
-    fetch("/api/promotions")
-      .then(async r => {
-        if (!r.ok) throw new Error("Failed to fetch promotions");
-        const text = await r.text();
-        return text ? JSON.parse(text) : {};
-      })
-      .then(d => {
-        if (d.promotions) {
-          const hero = d.promotions.filter((p: any) => p.placement === "hero");
-          if (hero.length > 0) setHeroSlides(hero);
-          
-          const sidebar = d.promotions.filter((p: any) => p.placement === "sidebar");
-          if (sidebar.length > 0) setSidebarAds(sidebar);
+export default async function HomeRedesign() {
+  const supabase = getSupabase();
+
+  // 1. Fetch Promotions
+  const { data: promotions } = await supabase.from("promotions").select("*").eq("is_active", true);
+  const heroSlides = promotions?.filter(p => p.placement === "hero") || [];
+  const sidebarAds = promotions?.filter(p => p.placement === "sidebar") || [];
+
+  // 2. Fetch Recent Stories
+  const { data: recentStoriesData } = await supabase
+    .from("stories")
+    .select("*, collection:collection_id(name)")
+    .order("created_at", { ascending: false })
+    .limit(4);
+    
+  const recentStories = recentStoriesData || [];
+
+  // 3. Fetch Top Views
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const dateStr = sevenDaysAgo.toISOString().split("T")[0];
+
+  const { data: viewsData } = await supabase
+    .from("analytics_daily_views")
+    .select(`
+      view_count, 
+      collection:collection_id(collection_id, name, slug, image),
+      story:stories_id(stories_id, name, slug, image)
+    `)
+    .gte("view_date", dateStr);
+
+  const collectionStats: Record<string, any> = {};
+  const storyStats: Record<string, any> = {};
+  
+  if (viewsData) {
+    for (const row of viewsData) {
+      if (row.collection) {
+        const coll = Array.isArray(row.collection) ? row.collection[0] : row.collection;
+        if (coll && coll.collection_id) {
+          const cid = coll.collection_id.toString();
+          if (!collectionStats[cid]) {
+            collectionStats[cid] = {
+              id: coll.collection_id,
+              name: coll.name,
+              slug: coll.slug,
+              image: coll.image,
+              total_views: 0
+            };
+          }
+          collectionStats[cid].total_views += row.view_count;
         }
-      })
-      .catch(console.error);
+      }
+      
+      if (row.story) {
+        const st = Array.isArray(row.story) ? row.story[0] : row.story;
+        if (st && st.stories_id) {
+          const sid = st.stories_id.toString();
+          if (!storyStats[sid]) {
+            storyStats[sid] = {
+              id: st.stories_id,
+              name: st.name,
+              slug: st.slug,
+              image: st.image,
+              total_views: 0
+            };
+          }
+          storyStats[sid].total_views += row.view_count;
+        }
+      }
+    }
+  }
 
-    // Fetch Dynamic Homepage Content
-    fetch("/api/homepage")
-      .then(async r => {
-        if (!r.ok) throw new Error("Failed to fetch homepage data");
-        const text = await r.text();
-        return text ? JSON.parse(text) : {};
-      })
-      .then(d => {
-        if (d.recentStories) setRecentStories(d.recentStories);
-        if (d.topCollections) setTopCollections(d.topCollections);
-        if (d.topStories) setTopStories(d.topStories);
-      })
-      .catch(console.error);
-  }, []);
-
-// Dropdown handling moved inside SearchBar
-
-  useEffect(() => {
-    if (isHovered) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-      setCurrentSidebarSlide((prev) => (prev + 1) % sidebarAds.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [isHovered, heroSlides, sidebarAds]);
-
-  const slide = heroSlides[currentSlide];
+  const topCollections = Object.values(collectionStats)
+    .sort((a, b) => b.total_views - a.total_views)
+    .slice(0, 5);
+    
+  const topStories = Object.values(storyStats)
+    .sort((a, b) => b.total_views - a.total_views)
+    .slice(0, 5);
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-stone-50 font-sans pb-20">
+    <main className="min-h-screen w-full bg-neutral-950 font-sans text-stone-50 selection:bg-emerald-500/30">
       
-      {/* ── 1. HERO SLIDER ── */}
-      {heroSlides.length > 0 && (
-      <section 
-        className="group relative w-full h-[60vh] min-h-[500px] bg-stone-900 overflow-hidden flex items-end transition-colors duration-1000"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* Background Image & Overlays */}
-        <div className={`absolute inset-0 bg-neutral-950 transition-colors duration-1000`}>
-           {heroSlides.map((s, index) => (
-             <div 
-               key={index} 
-               className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? "opacity-100" : "opacity-0"}`}
-             >
-               <Image 
-                 src={s.imgUrl || s.image_url} 
-                 alt={s.title} 
-                 fill 
-                 className="object-cover opacity-50"
-                 unoptimized
-               />
-               <div className={`absolute inset-0 bg-gradient-to-br ${s.bgClass || "from-emerald-900/80"} to-transparent mix-blend-multiply`}></div>
-             </div>
-           ))}
-           <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay z-10"></div>
-           <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent z-10"></div>
-        </div>
+      {/* ── 1. HERO CAROUSEL ── */}
+      <HeroSlider slides={heroSlides} />
 
-        {/* Tag Badge */}
-        {/* Removed absolute positioning to bring it closer to the title */}
-
-        {/* Manual Slide Arrows */}
-        <button 
-          onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-          className="absolute left-5 sm:left-8 top-1/2 -translate-y-1/2 z-20 h-10 w-10 flex items-center justify-center rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/50 transition backdrop-blur-sm opacity-0 group-hover:opacity-100"
-        >
-          <svg className="w-5 h-5 pr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-        </button>
-        <button 
-          onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-          className="absolute right-5 sm:right-8 top-1/2 -translate-y-1/2 z-20 h-10 w-10 flex items-center justify-center rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/50 transition backdrop-blur-sm opacity-0 group-hover:opacity-100"
-        >
-          <svg className="w-5 h-5 pl-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
-        </button>
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 pb-16 pl-20 sm:pl-28">
-          
-          <div key={currentSlide} className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {(slide.tag || slide.badge_text) && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 mb-6 backdrop-blur-md">
-                <span className="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
-                <span className="text-xs font-bold uppercase tracking-widest text-stone-200">{slide.tag || slide.badge_text}</span>
-              </div>
-            )}
-            
-            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-4 max-w-3xl">
-              {slide.highlight ? (
-                <>{slide.title.replace(slide.highlight, "")} <span className="text-white brightness-150 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{slide.highlight}</span></>
-              ) : (
-                <>{slide.title}</>
-              )}
-            </h1>
-            <p className="text-lg text-stone-300 max-w-2xl mb-8 leading-relaxed">
-              {slide.desc || slide.description}
-            </p>
-            <div className="flex items-center gap-4">
-              {(slide.btn1 || slide.button_text) && (
-                <Link href={slide.link || slide.button_url || "#"} className="rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-black transition hover:bg-stone-200 hover:scale-105 transform duration-200">
-                  {slide.btn1 || slide.button_text}
-                </Link>
-              )}
-              {(slide.btn2 || slide.button_2_text) && (
-                <Link href={slide.link || slide.button_2_url || "#"} className="rounded-xl bg-white/5 border border-white/10 px-8 py-3.5 text-sm font-bold text-white transition hover:bg-white/10">
-                  {slide.btn2 || slide.button_2_text}
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                currentSlide === index ? "w-8 bg-white" : "w-2 bg-white/30 hover:bg-white/50"
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
-      </section>
-      )}
-
-      {/* Add spacing after hero banner */}
       <div className="mb-8"></div>
 
       {/* ── SEARCH & DISCOVERY BAR ── */}
@@ -172,7 +102,7 @@ export default function HomeRedesign() {
         className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-8 mb-8"
       />
 
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-12 space-y-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-12 space-y-20 pb-20">
         
         {/* ── 2. NEWLY MINTED LORE (New Stories) ── */}
         <section>
@@ -187,7 +117,6 @@ export default function HomeRedesign() {
                 ? story.collection[0]?.name 
                 : story.collection?.name || "Unknown";
                 
-              // Rough mock formatting for time ago
               const publishDate = new Date(story.created_at);
               const isRecent = (Date.now() - publishDate.getTime()) < 86400000;
               const timeDisplay = isRecent ? "Today" : publishDate.toLocaleDateString();
@@ -220,59 +149,8 @@ export default function HomeRedesign() {
           </div>
         </section>
         
-        {/* Add spacing between Recent Lore and Ad Banner */}
-        <div className="mb-12"></div>
-
         {/* ── 3. PROMOTED AD (Middle Banner) ── */}
-        {sidebarAds.length > 0 && (
-          <section className="mb-16 w-full h-[200px] sm:h-[250px] rounded-3xl bg-gradient-to-r from-stone-900 to-black border border-white/10 overflow-hidden relative group flex items-center justify-center">
-            {sidebarAds.map((ad, idx) => (
-              <div 
-                key={idx}
-                className={`absolute inset-0 flex items-center transition-all duration-1000 ease-in-out ${
-                  idx === currentSidebarSlide ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-                }`}
-              >
-                {/* Background Image with horizontal gradient fade */}
-                {ad.image_url && (
-                  <div className="absolute inset-0 z-0">
-                    <img src={ad.image_url} alt={ad.title} className="w-full h-full object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-700 mix-blend-overlay" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
-                  </div>
-                )}
-                
-                <div className="relative z-10 w-full flex flex-col md:flex-row items-center justify-between px-8 sm:px-12 lg:px-20 gap-6">
-                  <div className="text-center md:text-left max-w-xl">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-2 block">
-                      {ad.badge_text || "Sponsored"}
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">{ad.title || "Build Your Hub"}</h3>
-                    <p className="text-sm text-stone-300 line-clamp-2">{ad.description}</p>
-                  </div>
-                  
-                  {(ad.button_url || ad.button_text) && (
-                    <Link href={ad.button_url || "#"} className="shrink-0 h-12 px-8 flex items-center justify-center bg-white text-black font-bold rounded-xl hover:bg-emerald-400 transition-colors">
-                      {ad.button_text || "Learn More"}
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ))}
-            
-            {/* Horizontal Pagination Dots */}
-            {sidebarAds.length > 1 && (
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
-                {sidebarAds.map((_, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => setCurrentSidebarSlide(idx)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSidebarSlide ? "w-6 bg-emerald-400" : "w-1.5 bg-white/30 hover:bg-white/50"}`}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+        <AdBanner ads={sidebarAds} />
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* ── 4. TOP TRENDING COLLECTIONS ── */}
