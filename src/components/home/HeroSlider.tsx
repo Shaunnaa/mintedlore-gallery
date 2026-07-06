@@ -6,21 +6,29 @@ import Image from "next/image";
 
 export default function HeroSlider({ slides }: { slides: any[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
+    if (isPaused) return; // Stop the timer if the user is hovering
+    
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
+    
     return () => clearInterval(timer);
-  }, [slides?.length]);
+  }, [slides?.length, isPaused]);
 
   if (!slides || slides.length === 0) return null;
 
   const slide = slides[currentSlide];
 
   return (
-    <section className="relative w-full overflow-hidden bg-neutral-950 pt-20 sm:pt-24 min-h-[500px] flex items-center group">
+    <section 
+      className="relative w-full overflow-hidden bg-neutral-950 pt-20 sm:pt-24 min-h-[500px] flex items-center group"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       {/* Background Image & Overlay */}
       {slide.image_url && (
         <div className="absolute inset-0 z-0">

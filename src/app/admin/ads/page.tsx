@@ -9,6 +9,7 @@ export default function AdminAdsPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive" | "expired">("all");
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [editingAd, setEditingAd] = useState<any>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { publicKey } = useWallet();
 
   const fetchAds = (wallet: string) => {
@@ -67,6 +68,33 @@ export default function AdminAdsPage() {
     else {
       const errorData = await res.json().catch(() => null);
       alert(`Failed to save promotion. ${errorData?.error || ""}`);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/ads/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      if (data.url) {
+        setEditingAd({ ...editingAd, image_url: data.url });
+      }
+    } catch (err: any) {
+      alert("Failed to upload image.");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -211,9 +239,15 @@ export default function AdminAdsPage() {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-stone-400">Background Image URL <span className="text-red-400">*</span></label>
-                <input required value={editingAd.image_url} onChange={e => setEditingAd({...editingAd, image_url: e.target.value})}
-                  placeholder="https://.../banner.jpg"
-                  className="rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-white placeholder-stone-600 focus:border-emerald-500/50 focus:outline-none" />
+                <div className="flex gap-2">
+                  <input required value={editingAd.image_url} onChange={e => setEditingAd({...editingAd, image_url: e.target.value})}
+                    placeholder="https://.../banner.jpg"
+                    className="flex-1 rounded-lg border border-white/10 bg-black/40 px-4 py-2.5 text-white placeholder-stone-600 focus:border-emerald-500/50 focus:outline-none" />
+                  <label className={`flex shrink-0 cursor-pointer items-center justify-center rounded-lg bg-emerald-500/20 px-4 py-2.5 text-sm font-bold text-emerald-400 transition hover:bg-emerald-500/30 ${uploadingImage ? "opacity-50 cursor-not-allowed" : ""}`}>
+                    {uploadingImage ? "Uploading..." : "Upload"}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                  </label>
+                </div>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
