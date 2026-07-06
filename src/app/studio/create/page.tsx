@@ -23,6 +23,7 @@ function CreateCommunityForm() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [collectionType, setCollectionType] = useState<CollectionType>("type_a");
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Step 1 fields
   const [name, setName]           = useState("");
@@ -49,6 +50,18 @@ function CreateCommunityForm() {
   useEffect(() => {
     setSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   }, [name]);
+
+  // Fetch user role when wallet connects
+  useEffect(() => {
+    if (!publicKey) { setUserRole(null); return; }
+    fetch(`/api/admin/role?wallet=${publicKey.toBase58()}`)
+      .then(r => r.json())
+      .then(d => setUserRole(d.role ?? null))
+      .catch(() => setUserRole(null));
+  }, [publicKey]);
+
+  // Check if user can use Game Integration
+  const canUseGameIntegration = userRole === "admin" || userRole === "game_creator";
 
 
 
@@ -102,7 +115,7 @@ function CreateCommunityForm() {
     return () => clearTimeout(timeoutId);
   }, [collectionSymbol]);
 
-  const canProceedStep1 = name.trim().length >= 3 && slug.length >= 2;
+  const canProceedStep1 = name.trim().length >= 3 && slug.length >= 3;
 
   const canProceedStep2 = 
     collectionType === "type_a" ? collectionAddress.trim().length > 30 :
@@ -176,28 +189,70 @@ function CreateCommunityForm() {
             <div>
               <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Community Type</label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {(["type_a", "type_game"] as CollectionType[]).map((t) => (
+                {/* Full Collection — always available */}
+                <button
+                  onClick={() => setCollectionType("type_a")}
+                  className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${
+                    collectionType === "type_a"
+                      ? "border-violet-500 bg-violet-500/10"
+                      : "border-white/10 hover:border-white/20"
+                  }`}
+                >
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black bg-violet-500/20 text-violet-300">🖼️</span>
+                  <span className="text-sm font-bold text-white">Full Collection</span>
+                  <span className="text-xs text-stone-500">Link to a full NFT collection</span>
+                </button>
+
+                {/* Game Integration — locked for non game_creator / admin */}
+                {canUseGameIntegration ? (
                   <button
-                    key={t}
-                    onClick={() => setCollectionType(t)}
-                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionType === t ? (t === "type_a" ? "border-violet-500 bg-violet-500/10" : "border-emerald-500 bg-emerald-500/10") : "border-white/10 hover:border-white/20"}`}
+                    onClick={() => setCollectionType("type_game")}
+                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${
+                      collectionType === "type_game"
+                        ? "border-emerald-500 bg-emerald-500/10"
+                        : "border-white/10 hover:border-white/20"
+                    }`}
                   >
-                    <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${t === "type_a" ? "bg-violet-500/20 text-violet-300" : "bg-emerald-500/20 text-emerald-300"}`}>
-                      {t === "type_a" ? "🖼️" : "🎮"}
-                    </span>
-                    <span className="text-sm font-bold text-white">
-                      {t === "type_a" ? "Full Collection" : "Game Integration"}
-                    </span>
-                    <span className="text-xs text-stone-500">
-                      {t === "type_a" ? "Link to a full Magic Eden collection" : "Bespoke hub for Web3 Games (e.g. Star Atlas)"}
-                    </span>
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300">🎮</span>
+                    <span className="text-sm font-bold text-white">Game Integration</span>
+                    <span className="text-xs text-stone-500">Bespoke hub for Web3 Games (e.g. Star Atlas)</span>
                   </button>
-                ))}
+                ) : (
+                  <div className="relative flex flex-col gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-left opacity-60 cursor-not-allowed select-none">
+                    {/* Lock badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className="flex items-center gap-1 rounded-full bg-stone-800 border border-white/10 px-2 py-0.5 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Locked
+                      </span>
+                    </div>
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black bg-stone-800 text-stone-500">🎮</span>
+                    <span className="text-sm font-bold text-stone-400">Game Integration</span>
+                    <span className="text-xs text-stone-600">Bespoke hub for Web3 Games (e.g. Star Atlas)</span>
+                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-amber-500/80">
+                      <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <a 
+                        href="https://x.com/shaunnaaa007" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:text-amber-400 hover:underline transition-colors pointer-events-auto"
+                      >
+                        Please contact us on X to unlock
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Community Name</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
+                Community Name <span className="text-rose-500">*</span> <span className="text-stone-600 normal-case tracking-normal ml-1">(min 3 chars)</span>
+              </label>
               <input
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30"
                 placeholder="e.g. Laser Eyes Club"
@@ -207,7 +262,9 @@ function CreateCommunityForm() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">URL Slug</label>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
+                URL Slug <span className="text-rose-500">*</span> <span className="text-stone-600 normal-case tracking-normal ml-1">(min 3 chars)</span>
+              </label>
               <div className="flex items-center gap-0">
                 <span className="rounded-l-lg border border-r-0 border-white/10 bg-white/[0.02] px-3 py-3 text-xs text-stone-600">/</span>
                 <input
@@ -246,7 +303,9 @@ function CreateCommunityForm() {
               <>
                 <div className="flex flex-col gap-5">
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">On-Chain Collection Address (Required)</label>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
+                      On-Chain Collection Address <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
                       placeholder="e.g. 5PA... (Base58 Address)"
