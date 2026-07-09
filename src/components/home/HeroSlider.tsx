@@ -24,9 +24,10 @@ export default function HeroSlider({ slides }: { slides: any[] }) {
   const slide = slides[currentSlide];
 
   return (
-    <section 
-      className="relative w-full overflow-hidden bg-neutral-950 pt-20 sm:pt-24 min-h-[500px] flex items-center group"
-      onMouseEnter={() => setIsPaused(true)}
+    <div className="relative group max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-4 sm:mt-8">
+      <section 
+        className="relative w-full rounded-3xl overflow-hidden bg-neutral-950 border border-white/20 pt-10 sm:pt-16 h-[400px] flex items-center"
+        onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Background Image & Overlay */}
@@ -36,29 +37,11 @@ export default function HeroSlider({ slides }: { slides: any[] }) {
             src={slide.image_url} 
             alt={slide.title || "Hero Background"}
             fill 
-            className="object-cover opacity-30 group-hover:opacity-50 transition-opacity duration-700 mix-blend-overlay" 
+            className="object-cover object-right opacity-90 group-hover:opacity-100 transition-opacity duration-700" 
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/80 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/50 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/80 via-neutral-950/30 to-transparent"></div>
         </div>
-      )}
-
-      {/* Navigation Arrows */}
-      {slides.length > 1 && (
-        <>
-          <button 
-            onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
-            className="absolute left-5 sm:left-8 top-1/2 -translate-y-1/2 z-20 h-10 w-10 flex items-center justify-center rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/50 transition backdrop-blur-sm opacity-0 group-hover:opacity-100"
-          >
-            <svg className="w-5 h-5 pr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <button 
-            onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
-            className="absolute right-5 sm:right-8 top-1/2 -translate-y-1/2 z-20 h-10 w-10 flex items-center justify-center rounded-full bg-black/20 border border-white/10 text-white hover:bg-black/50 transition backdrop-blur-sm opacity-0 group-hover:opacity-100"
-          >
-            <svg className="w-5 h-5 pl-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </>
       )}
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 pb-16 pl-20 sm:pl-28">
@@ -70,7 +53,7 @@ export default function HeroSlider({ slides }: { slides: any[] }) {
             </div>
           )}
           
-          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-4 max-w-3xl">
+          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-4 max-w-3xl">
             {slide.highlight ? (
               <>{slide.title.replace(slide.highlight, "")} <span className="text-white brightness-150 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">{slide.highlight}</span></>
             ) : (
@@ -111,5 +94,24 @@ export default function HeroSlider({ slides }: { slides: any[] }) {
         </div>
       )}
     </section>
+
+      {/* Navigation Arrows (Moved Outside Box) */}
+      {slides.length > 1 && (
+        <>
+          <button 
+            onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
+            className="absolute left-0 sm:left-2 lg:-left-[3px] top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100"
+          >
+            <svg className="w-5 h-5 pr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <button 
+            onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
+            className="absolute right-0 sm:right-2 lg:-right-[3px] top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100"
+          >
+            <svg className="w-5 h-5 pl-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </>
+      )}
+    </div>
   );
 }
