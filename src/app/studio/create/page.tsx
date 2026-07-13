@@ -29,6 +29,9 @@ function CreateCommunityForm() {
   const [name, setName]           = useState("");
   const [slug, setSlug]           = useState("");
   const [description, setDescription] = useState("");
+  const [isCreator, setIsCreator] = useState(false);
+  const [verifiedName, setVerifiedName] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   // Step 2 
   const [collectionAddress, setCollectionAddress] = useState("");
@@ -48,8 +51,16 @@ function CreateCommunityForm() {
 
   // Auto-generate slug from name
   useEffect(() => {
-    setSlug(name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-  }, [name]);
+    let cleanName = isCreator ? name : name.replace(/ \(Fan Club\)$/i, "");
+    if (!isCreator && verifiedName) {
+      cleanName = cleanName.replace(new RegExp(`^${verifiedName} - `, "i"), "");
+    }
+    let newSlug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (newSlug && !isCreator && !newSlug.endsWith("-fan")) {
+      newSlug = newSlug + "-fan";
+    }
+    setSlug(newSlug);
+  }, [name, isCreator, verifiedName]);
 
   // Fetch user role when wallet connects
   useEffect(() => {
@@ -115,11 +126,43 @@ function CreateCommunityForm() {
     return () => clearTimeout(timeoutId);
   }, [collectionSymbol]);
 
-  const canProceedStep1 = name.trim().length >= 3 && slug.length >= 3;
-
-  const canProceedStep2 = 
+  const canProceedStep1 = 
     collectionType === "type_a" ? collectionAddress.trim().length > 30 :
     collectionType === "type_game" ? collectionSymbol === "star_atlas" : false;
+
+  const canProceedStep2 = name.trim().length >= 3 && slug.length >= 3;
+
+  const handleVerifyStep1 = async () => {
+    if (collectionType === "type_game") {
+      setIsCreator(true);
+      setName("Star Atlas");
+      setStep(2);
+      return;
+    }
+    
+    setVerifying(true);
+    try {
+      const res = await fetch('/api/collection/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collectionAddress, walletAddress: publicKey?.toBase58() })
+      });
+      const data = await res.json();
+      
+      setIsCreator(!!data.isCreator);
+      if (data.name) {
+        setVerifiedName(data.name);
+        setName(data.isCreator ? data.name : "");
+        setSlug("");
+      }
+    } catch (err) {
+      console.error(err);
+      setIsCreator(false);
+    } finally {
+      setVerifying(false);
+      setStep(2);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!publicKey) return;
@@ -128,8 +171,8 @@ function CreateCommunityForm() {
     try {
       const body = {
         ownerWallet: publicKey.toBase58(),
-        name,
-        slug,
+        name: (!isCreator && verifiedName && name) ? `${verifiedName} - ${name.replace(/ \(Fan Club\)$/i, "")} (Fan Club)` : (!isCreator ? `${name.replace(/ \(Fan Club\)$/i, "")} (Fan Club)` : name),
+        slug: (!isCreator && verifiedName && slug) ? `${verifiedName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${slug.replace(/-fan$/, "")}-fan` : (!isCreator ? `${slug.replace(/-fan$/, "")}-fan` : slug),
         description,
         collectionType,
         collectionAddress: collectionType === "type_game" ? "star_atlas" : collectionAddress,
@@ -183,19 +226,17 @@ function CreateCommunityForm() {
           </span>
         </div>
 
-        {/* ── STEP 1: Name & Type ── */}
+                {/* ── STEP 1: Collection ── */}
         {step === 1 && (
           <div className="space-y-6">
             <div>
               <label className="mb-3 block text-xs font-semibold uppercase tracking-widest text-stone-400">Community Type</label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Full Collection — always available */}
+                {/* Full Collection */}
                 <button
                   onClick={() => setCollectionType("type_a")}
                   className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${
-                    collectionType === "type_a"
-                      ? "border-violet-500 bg-violet-500/10"
-                      : "border-white/10 hover:border-white/20"
+                    collectionType === "type_a" ? "border-violet-500 bg-violet-500/10" : "border-white/10 hover:border-white/20"
                   }`}
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black bg-violet-500/20 text-violet-300">🖼️</span>
@@ -203,14 +244,12 @@ function CreateCommunityForm() {
                   <span className="text-xs text-stone-500">Link to a full NFT collection</span>
                 </button>
 
-                {/* Game Integration — locked for non game_creator / admin */}
+                {/* Game Integration */}
                 {canUseGameIntegration ? (
                   <button
                     onClick={() => setCollectionType("type_game")}
                     className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${
-                      collectionType === "type_game"
-                        ? "border-emerald-500 bg-emerald-500/10"
-                        : "border-white/10 hover:border-white/20"
+                      collectionType === "type_game" ? "border-emerald-500 bg-emerald-500/10" : "border-white/10 hover:border-white/20"
                     }`}
                   >
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300">🎮</span>
@@ -219,7 +258,6 @@ function CreateCommunityForm() {
                   </button>
                 ) : (
                   <div className="relative flex flex-col gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-left opacity-60 cursor-not-allowed select-none">
-                    {/* Lock badge */}
                     <div className="absolute top-3 right-3">
                       <span className="flex items-center gap-1 rounded-full bg-stone-800 border border-white/10 px-2 py-0.5 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -230,75 +268,12 @@ function CreateCommunityForm() {
                     </div>
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-black bg-stone-800 text-stone-500">🎮</span>
                     <span className="text-sm font-bold text-stone-400">Game Integration</span>
-                    <span className="text-xs text-stone-600">Bespoke hub for Web3 Games (e.g. Star Atlas)</span>
-                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-amber-500/80">
-                      <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <a 
-                        href="https://x.com/shaunnaaa007" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="hover:text-amber-400 hover:underline transition-colors pointer-events-auto"
-                      >
-                        Please contact us on X to unlock
-                      </a>
-                    </div>
+                    <span className="text-xs text-stone-600">Bespoke hub for Web3 Games</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
-                Community Name <span className="text-rose-500">*</span> <span className="text-stone-600 normal-case tracking-normal ml-1">(min 3 chars)</span>
-              </label>
-              <input
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30"
-                placeholder="e.g. Laser Eyes Club"
-                value={name}
-                onChange={e => setName(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
-                URL Slug <span className="text-rose-500">*</span> <span className="text-stone-600 normal-case tracking-normal ml-1">(min 3 chars)</span>
-              </label>
-              <div className="flex items-center gap-0">
-                <span className="rounded-l-lg border border-r-0 border-white/10 bg-white/[0.02] px-3 py-3 text-xs text-stone-600">/</span>
-                <input
-                  className="flex-1 rounded-r-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
-                  value={slug}
-                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Description <span className="text-stone-600">(optional)</span></label>
-              <textarea
-                rows={3}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
-                placeholder="Tell the story of this community..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-              />
-            </div>
-
-            <button
-              disabled={!canProceedStep1}
-              onClick={() => setStep(2)}
-              className="w-full rounded-xl bg-violet-600 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Next: Collection →
-            </button>
-          </div>
-        )}
-
-        {/* ── STEP 2: Collection ── */}
-        {step === 2 && (
-          <div className="space-y-6">
             {collectionType === "type_a" && (
               <>
                 <div className="flex flex-col gap-5">
@@ -307,16 +282,16 @@ function CreateCommunityForm() {
                       On-Chain Collection Address <span className="text-rose-500">*</span>
                     </label>
                     <input
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30"
                       placeholder="e.g. 5PA... (Base58 Address)"
                       value={collectionAddress}
                       onChange={e => setCollectionAddress(e.target.value)}
                     />
-                    <p className="mt-2 text-[10px] text-stone-500">Used by Metaplex DAS API to fetch the collection NFTs.</p>
+                    <p className="mt-2 text-[10px] text-stone-500">We will verify if you are the creator using this address.</p>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
-                      Magic Eden Symbol <span className="text-stone-500">(* Tensor soon)</span> <span className="text-stone-600">(Optional)</span>
+                      Magic Eden Symbol <span className="text-stone-600">(Optional)</span>
                       {symbolLookupLoading && <span className="ml-2 text-violet-400 animate-pulse">Auto-detecting...</span>}
                     </label>
                     <div className="flex gap-2 relative">
@@ -332,7 +307,6 @@ function CreateCommunityForm() {
                         </div>
                       )}
                     </div>
-                    <p className="mt-2 text-[10px] text-stone-500">Used to pull floor prices and marketplace data.</p>
                   </div>
                 </div>
                 {preview && (
@@ -347,35 +321,136 @@ function CreateCommunityForm() {
               </>
             )}
 
-
-
             {collectionType === "type_game" && (
-              <>
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Supported Web3 Games</label>
-                  <div className="grid grid-cols-1 gap-3">
-                    <button
-                      onClick={() => setCollectionSymbol("star_atlas")}
-                      className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionSymbol === "star_atlas" ? "border-emerald-500 bg-emerald-500/10" : "border-white/10 hover:border-white/20"}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">✨</span>
-                        <div>
-                          <span className="text-sm font-bold text-white">Star Atlas</span>
-                          <p className="text-xs text-stone-500">Galactic Marketplace Integration</p>
-                        </div>
-                        {collectionSymbol === "star_atlas" && (
-                          <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-xs text-emerald-400">✓</span>
-                        )}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Supported Web3 Games</label>
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => setCollectionSymbol("star_atlas")}
+                    className={`flex flex-col gap-2 rounded-xl border p-4 text-left transition ${collectionSymbol === "star_atlas" ? "border-emerald-500 bg-emerald-500/10" : "border-white/10 hover:border-white/20"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">✨</span>
+                      <div>
+                        <span className="text-sm font-bold text-white">Star Atlas</span>
+                        <p className="text-xs text-stone-500">Galactic Marketplace Integration</p>
                       </div>
-                    </button>
-                    <div className="rounded-xl border border-dashed border-white/5 p-4 text-center">
-                      <p className="text-xs text-stone-600">More games coming soon...</p>
+                      {collectionSymbol === "star_atlas" && (
+                        <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-xs text-emerald-400">✓</span>
+                      )}
                     </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              disabled={!canProceedStep1 || verifying}
+              onClick={handleVerifyStep1}
+              className="w-full rounded-xl bg-violet-600 py-3 flex items-center justify-center text-sm font-bold uppercase tracking-widest text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {verifying ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white"></div>
+                  Verifying...
+                </>
+              ) : "Next: Details →"}
+            </button>
+          </div>
+        )}
+
+        {/* ── STEP 2: Details ── */}
+        {step === 2 && (
+          <div className="space-y-6">
+            
+            {/* Status Banner */}
+            {isCreator ? (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-lg">✓</span>
+                  <div>
+                    <p className="font-bold text-emerald-400">Verified Creator</p>
+                    <p className="text-xs text-emerald-500/80">You are an authority of this collection. You can use the official slug.</p>
                   </div>
                 </div>
-              </>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 text-lg">👥</span>
+                  <div>
+                    <p className="font-bold text-amber-400">Fan Collection</p>
+                    <p className="text-xs text-amber-500/80">
+                      Your wallet doesn't own this collection. 
+                      {verifiedName ? " Your community name will start with the official name, and your URL will end with " : " Your URL will end with "}
+                      <strong>-fan</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
+
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
+                Collection Name <span className="text-rose-500">*</span> <span className="text-stone-600 normal-case tracking-normal ml-1">(min 3 chars)</span>
+              </label>
+              <div className="flex items-center gap-0">
+                {(!isCreator && verifiedName) && (
+                  <span className="rounded-l-lg border border-r-0 border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-stone-500 whitespace-nowrap">
+                    {verifiedName} -
+                  </span>
+                )}
+                <input
+                  className={`flex-1 ${!isCreator && verifiedName ? 'rounded-none' : (!isCreator ? 'rounded-none rounded-l-lg' : 'rounded-lg')} border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30`}
+                  placeholder={(!isCreator && verifiedName) ? "e.g. daily" : "e.g. Laser Eyes Club"}
+                  value={isCreator ? name : name.replace(/ \(Fan Club\)$/i, "").replace(new RegExp(`^${verifiedName} - `, "i"), "")}
+                  onChange={e => {
+                    let val = e.target.value.replace(/ \(Fan Club\)$/i, "").replace(new RegExp(`^${verifiedName} - `, "i"), "");
+                    if (!isCreator && val) {
+                       val += " (Fan Club)";
+                    }
+                    setName(val);
+                  }}
+                />
+                {!isCreator && (
+                  <span className="rounded-r-lg border border-l-0 border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-stone-500 whitespace-nowrap">(Fan Club)</span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
+                URL Slug <span className="text-rose-500">*</span> <span className="text-stone-600 normal-case tracking-normal ml-1">(min 3 chars)</span>
+              </label>
+              <div className="flex items-center gap-0">
+                <span className="rounded-l-lg border border-r-0 border-white/10 bg-white/[0.02] px-3 py-3 text-xs text-stone-600">
+                  {(!isCreator && verifiedName) ? `/${verifiedName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-` : "/"}
+                </span>
+                <input
+                  className={`flex-1 ${!isCreator ? 'rounded-none' : 'rounded-r-lg'} border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-stone-600 outline-none focus:border-violet-500/60`}
+                  value={isCreator ? slug : slug.replace(/-fan$/, '').replace(new RegExp(`^${verifiedName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-`), '')}
+                  onChange={e => {
+                    let val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                    if (!isCreator && val) val += "-fan";
+                    setSlug(val);
+                  }}
+                />
+                {!isCreator && (
+                  <span className="rounded-r-lg border border-l-0 border-white/10 bg-white/[0.02] px-3 py-3 text-xs text-stone-500">-fan</span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">Description <span className="text-stone-600">(optional)</span></label>
+              <textarea
+                rows={3}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-stone-600 outline-none focus:border-violet-500/60"
+                placeholder="Tell the story of this community..."
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+              />
+            </div>
 
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 rounded-xl border border-white/10 py-3 text-sm font-bold text-stone-400 transition hover:border-white/20 hover:text-white">
@@ -395,7 +470,7 @@ function CreateCommunityForm() {
           </div>
         )}
 
-        {/* ── STEP 3: Appearance ── */}
+{/* ── STEP 3: Appearance ── */}
         {step === 3 && (
           <div className="space-y-6">
             {collectionType === "type_game" ? (

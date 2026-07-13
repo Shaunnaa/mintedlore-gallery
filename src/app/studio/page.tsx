@@ -107,7 +107,7 @@ export default function StudioPage() {
               href="/studio/create"
               className="flex items-center gap-2 rounded-full border border-violet-500/50 bg-violet-500/10 px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-violet-300 shadow-[0_0_20px_rgba(139,92,246,0.2)] transition hover:bg-violet-500/20"
             >
-              <span>+</span> New Community
+              <span>+</span> New Collection
             </Link>
           )}
         </div>

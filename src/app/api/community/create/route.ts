@@ -41,21 +41,49 @@ export async function POST(request: Request) {
 
     const supabase = getSupabase();
 
+    let finalSlug = slug;
+    let finalName = name;
+
+    // ── Enforce Creator Status for Type A ─────────────────────────────────────
+    if (collectionType === "type_a" && collectionAddress !== "star_atlas") {
+      const baseUrl = request.headers.get("origin") || "http://localhost:3000";
+      try {
+        const verifyRes = await fetch(`${baseUrl}/api/collection/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ collectionAddress, walletAddress: ownerWallet }),
+        });
+        const verifyData = await verifyRes.json();
+        
+        if (!verifyData.isCreator) {
+          if (!finalSlug.endsWith("-fan")) finalSlug = `${finalSlug}-fan`;
+          if (!finalName.endsWith(" (Fan Club)")) finalName = `${finalName} (Fan Club)`;
+          if (verifyData.name && !finalName.startsWith(verifyData.name + " - ")) {
+            return NextResponse.json({ error: "Fan collections must start with the official collection name" }, { status: 400 });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to verify creator server-side", err);
+        if (!finalSlug.endsWith("-fan")) finalSlug = `${finalSlug}-fan`; // Fail safe
+        if (!finalName.endsWith(" (Fan Club)")) finalName = `${finalName} (Fan Club)`;
+      }
+    }
+
     // ── Duplicate slug check ──────────────────────────────────────────────────
     if (collectionType !== "type_b") {
-      const { data: existingCollection } = await supabase.from("collection").select("collection_id").eq("slug", slug).maybeSingle();
+      const { data: existingCollection } = await supabase.from("collection").select("collection_id").eq("slug", finalSlug).maybeSingle();
       if (existingCollection) {
-        return NextResponse.json({ error: `Collection slug "${slug}" is already taken` }, { status: 409 });
+        return NextResponse.json({ error: `Collection slug "${finalSlug}" is already taken` }, { status: 409 });
       }
     } else {
       const { data: existingStory } = await supabase
         .from("stories")
         .select("stories_id")
-        .eq("slug", slug)
+        .eq("slug", finalSlug)
         .eq("collection_id", parentCommunityId)
         .maybeSingle();
       if (existingStory) {
-        return NextResponse.json({ error: `Slug "${slug}" is already taken in this collection` }, { status: 409 });
+        return NextResponse.json({ error: `Slug "${finalSlug}" is already taken in this collection` }, { status: 409 });
       }
     }
 
@@ -86,8 +114,8 @@ export async function POST(request: Request) {
         .from("stories")
         .insert({
           wallet_address: ownerWallet,
-          name,
-          slug,
+          name: finalName,
+          slug: finalSlug,
           description: description ?? "",
           image: finalImage || null,
           collection_id: parentCommunityId,
@@ -109,8 +137,8 @@ export async function POST(request: Request) {
         .from("collection")
         .insert({
           wallet_address: ownerWallet,
-          name,
-          slug,
+          name: finalName,
+          slug: finalSlug,
           description: description ?? "",
           image: finalImage || null,
           category: collectionType === "type_game" ? "game" : "nft",
