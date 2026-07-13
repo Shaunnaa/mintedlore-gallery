@@ -17,7 +17,7 @@ export default async function NftGalleryPage() {
 
   const { data: storiesData } = await supabase
     .from("stories")
-    .select("*")
+    .select("*, collection:collection_id(slug)")
     .order("created_at", { ascending: false });
 
   const typeACommunities = (collectionsData || []).map(mapCollectionRecord);
@@ -50,7 +50,10 @@ export default async function NftGalleryPage() {
         <GallerySearch
           items={[
             ...typeACommunities.map(c => ({ name: c.name, slug: c.slug, type: "Collection" })),
-            ...typeBCommunities.map(c => ({ name: c.name, slug: c.slug, type: "Story" })),
+            ...(storiesData || []).map(s => {
+              const parentSlug = Array.isArray(s.collection) ? s.collection[0]?.slug : s.collection?.slug;
+              return { name: s.name, slug: parentSlug ? `${parentSlug}/${s.slug}` : s.slug, type: "Story" };
+            }),
           ]}
         /> 
 

@@ -42,11 +42,21 @@ export async function POST(request: Request) {
     const supabase = getSupabase();
 
     // ── Duplicate slug check ──────────────────────────────────────────────────
-    const { data: existingCollection } = await supabase.from("collection").select("collection_id").eq("slug", slug).maybeSingle();
-    const { data: existingStory } = await supabase.from("stories").select("stories_id").eq("slug", slug).maybeSingle();
-
-    if (existingCollection || existingStory) {
-      return NextResponse.json({ error: `Slug "${slug}" is already taken` }, { status: 409 });
+    if (collectionType !== "type_b") {
+      const { data: existingCollection } = await supabase.from("collection").select("collection_id").eq("slug", slug).maybeSingle();
+      if (existingCollection) {
+        return NextResponse.json({ error: `Collection slug "${slug}" is already taken` }, { status: 409 });
+      }
+    } else {
+      const { data: existingStory } = await supabase
+        .from("stories")
+        .select("stories_id")
+        .eq("slug", slug)
+        .eq("collection_id", parentCommunityId)
+        .maybeSingle();
+      if (existingStory) {
+        return NextResponse.json({ error: `Slug "${slug}" is already taken in this collection` }, { status: 409 });
+      }
     }
 
     let finalImage = image;

@@ -26,22 +26,43 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const { slug } = await params;
   if (!slug || slug.length === 0 || slug.length > 2) return null;
 
-  const targetSlug = slug[slug.length - 1];
-
   const supabase = getSupabase();
   let community = undefined;
   let isCollection = false;
   let isStory = false;
-  
-  const { data: collectionRecord } = await supabase.from("collection").select("*").eq("slug", targetSlug).maybeSingle();
-  if (collectionRecord) {
-    community = mapCollectionRecord(collectionRecord);
-    isCollection = true;
-  } else {
-    const { data: storyRecord } = await supabase.from("stories").select("*").eq("slug", targetSlug).maybeSingle();
-    if (storyRecord) {
-      community = mapStoryRecord(storyRecord);
-      isStory = true;
+
+  if (slug.length === 1) {
+    // Top-level path: /fox
+    const { data: collectionRecord } = await supabase.from("collection").select("*").eq("slug", slug[0]).maybeSingle();
+    if (collectionRecord) {
+      community = mapCollectionRecord(collectionRecord);
+      isCollection = true;
+    } else {
+      // Fallback for backwards compatibility with old standalone stories
+      const { data: storyRecord } = await supabase.from("stories").select("*").eq("slug", slug[0]).maybeSingle();
+      if (storyRecord) {
+        community = mapStoryRecord(storyRecord);
+        isStory = true;
+      }
+    }
+  } else if (slug.length === 2) {
+    // Nested path: /fox/chapter-1
+    const parentSlug = slug[0];
+    const storySlug = slug[1];
+    
+    const { data: parentColl } = await supabase.from("collection").select("collection_id").eq("slug", parentSlug).maybeSingle();
+    if (parentColl) {
+      const { data: storyRecord } = await supabase
+        .from("stories")
+        .select("*")
+        .eq("slug", storySlug)
+        .eq("collection_id", parentColl.collection_id)
+        .maybeSingle();
+        
+      if (storyRecord) {
+        community = mapStoryRecord(storyRecord);
+        isStory = true;
+      }
     }
   }
 
@@ -79,7 +100,8 @@ export default async function GroupPage({ params }: GroupPageProps) {
     const { data: stories } = await supabase.from("stories").select("*").eq("collection_id", community.parentCommunityId).order("created_at");
     relatedRecords = stories || [];
   } else {
-    parentRecord = collectionRecord; // Since they are on the parent page
+    const { data: parent } = await supabase.from("collection").select("*").eq("collection_id", community.id).maybeSingle();
+    parentRecord = parent;
     const { data: stories } = await supabase.from("stories").select("*").eq("collection_id", community.id).order("created_at");
     relatedRecords = stories || [];
   }
@@ -235,6 +257,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
           collectionAddress={community.collectionAddress}
           communitySlug={community.slug}
           vipThreshold={community.vipThreshold ?? 1}
+          storyId={isStory ? community.id : undefined}
         />
 
         <CommunityViewSwitcher

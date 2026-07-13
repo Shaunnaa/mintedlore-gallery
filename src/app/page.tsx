@@ -17,7 +17,7 @@ export default async function HomeRedesign() {
   // 2. Fetch Recent Stories
   const { data: recentStoriesData } = await supabase
     .from("stories")
-    .select("*, collection:collection_id(name)")
+    .select("*, collection:collection_id(name, slug)")
     .order("created_at", { ascending: false })
     .limit(4);
     
@@ -33,7 +33,7 @@ export default async function HomeRedesign() {
     .select(`
       view_count, 
       collection:collection_id(collection_id, name, slug, image),
-      story:stories_id(stories_id, name, slug, image)
+      story:stories_id(stories_id, name, slug, image, collection:collection_id(slug))
     `)
     .gte("view_date", dateStr);
 
@@ -64,11 +64,13 @@ export default async function HomeRedesign() {
         if (st && st.stories_id) {
           const sid = st.stories_id.toString();
           if (!storyStats[sid]) {
+            const parentColl = Array.isArray(st.collection) ? st.collection[0] : st.collection;
             storyStats[sid] = {
               id: st.stories_id,
               name: st.name,
               slug: st.slug,
               image: st.image,
+              parent_slug: parentColl?.slug,
               total_views: 0
             };
           }
@@ -86,6 +88,26 @@ export default async function HomeRedesign() {
     .sort((a, b) => b.total_views - a.total_views)
     .slice(0, 5);
 
+  // 4. Fetch all items for search
+  const { data: allCollections } = await supabase.from("collection").select("name, slug, category");
+  const { data: allStories } = await supabase.from("stories").select("name, slug, collection:collection_id(slug)");
+
+  const searchItems = [
+    ...(allCollections || []).map(c => ({
+      name: c.name,
+      slug: c.slug,
+      type: c.category === "game" ? "Games" : "Collection"
+    })),
+    ...(allStories || []).map(s => {
+      const parentSlug = Array.isArray(s.collection) ? s.collection[0]?.slug : s.collection?.slug;
+      return {
+        name: s.name,
+        slug: parentSlug ? `${parentSlug}/${s.slug}` : s.slug,
+        type: "Stories"
+      }
+    })
+  ];
+
   return (
     <main className="min-h-screen w-full bg-neutral-950 font-sans text-stone-50 selection:bg-emerald-500/30">
       
@@ -98,7 +120,7 @@ export default async function HomeRedesign() {
       <SearchBar
         placeholder="Search collections, games, and stories..."
         filterOptions={["All", "Collection", "Games", "Stories"]}
-        items={[]}
+        items={searchItems}
         className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-8 mb-8"
       />
 
@@ -116,13 +138,16 @@ export default async function HomeRedesign() {
               const communityName = Array.isArray(story.collection) 
                 ? story.collection[0]?.name 
                 : story.collection?.name || "Unknown";
+              const parentSlug = Array.isArray(story.collection) 
+                ? story.collection[0]?.slug 
+                : story.collection?.slug || "";
                 
               const publishDate = new Date(story.created_at);
               const isRecent = (Date.now() - publishDate.getTime()) < 86400000;
               const timeDisplay = isRecent ? "Today" : publishDate.toLocaleDateString();
 
               return (
-              <Link href={`/${story.slug}`} key={i} className="group flex flex-col gap-4">
+              <Link href={`/${parentSlug ? parentSlug + "/" : ""}${story.slug}`} key={i} className="group flex flex-col gap-4">
                 <div className="aspect-[4/3] w-full rounded-2xl bg-stone-900 border border-white/10 overflow-hidden relative group-hover:border-emerald-500/50 transition-colors">
                    {story.image ? (
                      <img src={story.image} alt={story.name} className="w-full h-full object-cover opacity-80" />
@@ -200,7 +225,7 @@ export default async function HomeRedesign() {
             
             <div className="flex flex-col gap-4">
               {topStories.length > 0 ? topStories.map((story, index) => (
-                <Link href={`/${story.slug}`} key={story.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
+                <Link href={`/${story.parent_slug ? story.parent_slug + "/" : ""}${story.slug}`} key={story.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
                   <div className="text-2xl font-black text-stone-700 w-8 text-center">{index + 1}</div>
                   <div className="h-14 w-14 rounded-xl bg-stone-800 shrink-0 flex items-center justify-center overflow-hidden">
                     {story.image && story.image !== "/window.svg" ? (

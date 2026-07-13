@@ -21,6 +21,7 @@ type Community = {
   preferred_view: string;
   description: string;
   created_at: string;
+  parent_slug?: string | null;
 };
 
 function CommunityCard({ community, children }: { community: any, children?: React.ReactNode }) {
@@ -49,13 +50,13 @@ function CommunityCard({ community, children }: { community: any, children?: Rea
 
         <div className="mt-5 flex items-center gap-3">
           <Link
-            href={`/${community.slug}`}
+            href={`/${community.parent_slug ? `${community.parent_slug}/` : ""}${community.slug}`}
             className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs font-semibold text-stone-300 transition hover:border-white/30 hover:text-white"
           >
             View Page →
           </Link>
           <Link
-            href={`/studio/edit/${community.slug}`}
+            href={`/studio/edit/${community.parent_slug ? `${community.parent_slug}/` : ""}${community.slug}`}
             className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs font-semibold text-stone-300 transition hover:border-white/30 hover:text-white"
           >
             Edit

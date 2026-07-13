@@ -41,7 +41,7 @@ function CreateCommunityForm() {
 
   // Step 3
   const [preferredView, setPreferredView] = useState("timeline1");
-  const [vipThreshold, setVipThreshold] = useState(1);
+  const [vipThreshold, setVipThreshold] = useState(0);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState<string | null>(null);
@@ -458,16 +458,16 @@ function CreateCommunityForm() {
 
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-stone-400">
-                VIP Threshold — NFTs required to be a holder
+                VIP Threshold (Set to 0 to Disable)
               </label>
               <input
                 type="number"
-                min={1}
+                min={0}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-violet-500/60"
                 value={vipThreshold}
                 onChange={e => setVipThreshold(Number(e.target.value))}
               />
-              <p className="mt-1.5 text-xs text-stone-600">Users must hold at least this many NFTs to show the Verified Holder badge.</p>
+              <p className="mt-1.5 text-xs text-stone-600">If set to 0, it will just show the number of NFTs the user holds instead of a stamp card.</p>
             </div>
 
             {error && (

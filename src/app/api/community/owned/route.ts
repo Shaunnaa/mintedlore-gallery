@@ -32,6 +32,15 @@ export async function GET(request: Request) {
 
     if (err1 || err2) throw err1 || err2;
 
+    // Fetch parent slugs for stories
+    const storyParentIds = Array.from(new Set((stories || []).map(s => s.collection_id).filter(Boolean)));
+    const { data: parentCollections } = await supabase
+      .from("collection")
+      .select("collection_id, slug")
+      .in("collection_id", storyParentIds);
+      
+    const parentSlugMap = new Map((parentCollections || []).map(c => [c.collection_id, c.slug]));
+
     const mappedCollections = (collections || []).map(c => ({
       id: c.collection_id,
       name: c.name,
@@ -42,6 +51,7 @@ export async function GET(request: Request) {
       vip_threshold: c.vip_threshold,
       created_at: c.created_at,
       parent_community_id: null,
+      parent_slug: null,
       collection_type: (c.collection_address === "star_atlas" || c.category === "game") ? "type_game" : "type_a",
     }));
 
@@ -55,6 +65,7 @@ export async function GET(request: Request) {
       vip_threshold: s.vip_threshold,
       created_at: s.created_at,
       parent_community_id: s.collection_id,
+      parent_slug: parentSlugMap.get(s.collection_id) || null,
       collection_type: "type_b",
     }));
 
