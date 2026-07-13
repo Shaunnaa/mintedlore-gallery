@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getSupabase, mapCollectionRecord, mapStoryRecord } from "@/lib/supabase";
 import GallerySearch from "./GallerySearch";
 import GalleryGrid from "./GalleryGrid";
+import ScrollReveal from "@/components/animations/ScrollReveal";
 
 export const revalidate = 0;
 
@@ -27,6 +28,7 @@ export default async function NftGalleryPage() {
     <main className="min-h-screen bg-neutral-950 text-stone-50">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-5 py-10 sm:px-8 lg:px-10">
         {/* ── Header ── */}
+        <ScrollReveal yOffset={20}>
         <header className="border-b border-white/10 pb-10">
           <div className="flex items-center gap-3">
             <span className="relative flex h-3 w-3">
@@ -45,8 +47,10 @@ export default async function NftGalleryPage() {
             Browse NFT collections with custom timeline stories, lore, and curated gallery experiences built by owners.
           </p>
         </header>
+        </ScrollReveal>
 
         {/* ── Search Bar ── */}
+        <ScrollReveal yOffset={20} delay={0.1}>
         <GallerySearch
           items={[
             ...typeACommunities.map(c => ({ name: c.name, slug: c.slug, type: "Collection" })),
@@ -55,7 +59,8 @@ export default async function NftGalleryPage() {
               return { name: s.name, slug: parentSlug ? `${parentSlug}/${s.slug}` : s.slug, type: "Story" };
             }),
           ]}
-        /> 
+        />
+        </ScrollReveal> 
 
         {/* ── Grid with Filters ── */}
         <GalleryGrid

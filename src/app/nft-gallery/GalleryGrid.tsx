@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { StaggerContainer, StaggerItem } from "@/components/animations/StaggerGroup";
+import ScrollReveal from "@/components/animations/ScrollReveal";
 import Image from "next/image";
 
 interface Community {
@@ -46,6 +48,7 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
   return (
     <section>
       {/* ── Toolbar ── */}
+      <ScrollReveal yOffset={20}>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: label + count matching old design */}
         <div>
@@ -106,6 +109,7 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
           </button>
         </div>
       </div>
+      </ScrollReveal>
 
       {/* ── Empty state ── */}
       {filtered.length === 0 && (
@@ -122,11 +126,12 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
 
       {/* ── Grid View ── */}
       {filtered.length > 0 && layout === "grid" && (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <StaggerContainer className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((community) => {
             const children = childrenByParent[community.id] ?? [];
             return (
-              <div key={community.id} className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl shadow-black/20 transition duration-300 hover:border-emerald-400/40 hover:bg-white/[0.05]">
+              <StaggerItem key={community.id}>
+              <div className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl shadow-black/20 transition duration-300 hover:border-emerald-400/40 hover:bg-white/[0.05]">
                 <Link href={`/${community.slug}`} className="flex flex-1 flex-col">
                   <div className="flex h-48 w-full items-center justify-center bg-neutral-950 border-b border-white/10 overflow-hidden relative shrink-0">
                     {community.image === "/window.svg" ? (
@@ -184,18 +189,20 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
                   )}
                 </div>
               </div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
       )}
 
       {/* ── List View ── */}
       {filtered.length > 0 && layout === "list" && (
-        <div className="flex flex-col gap-3">
+        <StaggerContainer className="flex flex-col gap-3">
           {filtered.map((community) => {
             const children = childrenByParent[community.id] ?? [];
             return (
-              <Link key={community.id} href={`/${community.slug}`} className="group flex items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 transition duration-300 hover:border-emerald-400/40 hover:bg-white/[0.04]">
+              <StaggerItem key={community.id}>
+              <Link href={`/${community.slug}`} className="group flex items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 transition duration-300 hover:border-emerald-400/40 hover:bg-white/[0.04]">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-900 border border-white/10">
                   {community.image === "/window.svg" ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-900/40 to-neutral-950">
@@ -215,18 +222,19 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
       )}
       {/* ── Compact Thumbnail View ── */}
       {filtered.length > 0 && layout === "compact" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+        <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map((community) => {
             const children = childrenByParent[community.id] ?? [];
             return (
+              <StaggerItem key={community.id}>
               <Link
-                key={community.id}
                 href={`/${community.slug}`}
                 className="group flex flex-col gap-2"
               >
@@ -254,9 +262,10 @@ export default function GalleryGrid({ communities, subCommunities }: Props) {
                   </p>
                 </div>
               </Link>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
       )}
     </section>
   );
