@@ -1,12 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
-import React from "react";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import React, { useRef } from "react";
 
 const containerVariants = {
-  hidden: { opacity: 0 },
+  hidden: {},
   show: {
-    opacity: 1,
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.1
@@ -35,7 +34,7 @@ export function StaggerContainer({ children, className }: StaggerContainerProps)
       variants={containerVariants}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: false, margin: "-50px" }}
+      viewport={{ once: true, margin: "100px" }}
     >
       {children}
     </motion.div>
@@ -48,12 +47,24 @@ interface StaggerItemProps {
 }
 
 export function StaggerItem({ children, className }: StaggerItemProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 95%", "start 75%"]
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 300, damping: 30 });
+  
+  const opacity = useTransform(smoothProgress, [0, 1], [0, 1]);
+  const y = useTransform(smoothProgress, [0, 1], [40, 0]);
+  const scale = useTransform(smoothProgress, [0, 1], [0.95, 1]);
+
   return (
     <motion.div 
+      ref={ref}
       className={className} 
-      variants={itemVariants}
-      whileInView="show"
-      viewport={{ once: false, margin: "-50px" }}
+      style={{ opacity, y, scale }}
     >
       {children}
     </motion.div>
