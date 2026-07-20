@@ -5,6 +5,7 @@ import HeroSlider from "@/components/home/HeroSlider";
 import AdBanner from "@/components/home/AdBanner";
 import ScrollReveal from "@/components/animations/ScrollReveal";
 import { StaggerContainer, StaggerItem } from "@/components/animations/StaggerGroup";
+import HomeTracker from "@/components/home/HomeTracker";
 
 export const revalidate = 0; // Prevent Next.js from aggressively caching the homepage so views update
 
@@ -112,6 +113,7 @@ export default async function HomeRedesign() {
 
   return (
     <main className="min-h-screen w-full bg-neutral-950 font-sans text-stone-50 selection:bg-emerald-500/30">
+      <HomeTracker />
       
       {/* ── 1. HERO CAROUSEL ── */}
       <ScrollReveal delay={0.1} yOffset={20}>

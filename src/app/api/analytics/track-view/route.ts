@@ -10,10 +10,10 @@ function getSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { collection_id, stories_id } = await req.json();
+    const { collection_id, stories_id, page_type } = await req.json();
     
-    if (!collection_id && !stories_id) {
-      return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+    if (!collection_id && !stories_id && page_type !== "homepage") {
+      return NextResponse.json({ error: "Missing ID or page_type" }, { status: 400 });
     }
 
     const supabase = getSupabase();
@@ -26,6 +26,8 @@ export async function POST(req: Request) {
       .eq("view_date", today);
       
     if (collection_id) query = query.eq("collection_id", collection_id);
+    else query = query.is("collection_id", null);
+    
     if (stories_id) query = query.eq("stories_id", stories_id);
     else query = query.is("stories_id", null);
 
