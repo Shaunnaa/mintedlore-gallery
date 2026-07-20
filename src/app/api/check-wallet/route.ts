@@ -12,7 +12,7 @@ function getSupabase() {
 
 export async function POST(request: Request) {
   try {
-    const { walletAddress, collectionAddress, communitySlug } = await request.json();
+    const { walletAddress, collectionAddress, communitySlug, storyId } = await request.json();
 
     if (!walletAddress || !collectionAddress) {
       return NextResponse.json(
@@ -57,28 +57,23 @@ export async function POST(request: Request) {
       payload.result?.items ?? [];
     const allWalletMints = items.map(a => a.id);
 
-    // ── TYPE B: check against community_nfts table ────────────────────────────
-    if (communitySlug) {
+    // ── TYPE B: check against stories_selection table for specific NFTs ───────
+    if (storyId) {
       const supabase = getSupabase();
       if (supabase) {
-        const { data: community } = await supabase
-          .from("communities")
-          .select("id, collection_type")
-          .eq("slug", communitySlug)
-          .maybeSingle();
+        const { data: storyNfts } = await supabase
+          .from("stories_selection")
+          .select("mint_address")
+          .eq("stories_id", storyId);
 
-        if (community?.collection_type === "type_b") {
-          const { data: communityNfts } = await supabase
-            .from("community_nfts")
-            .select("mint_address")
-            .eq("community_id", community.id);
-
+        if (storyNfts && storyNfts.length > 0) {
           const allowedMints = new Set(
-            (communityNfts ?? []).map((n: { mint_address: string }) => n.mint_address)
+            storyNfts.map((n: { mint_address: string }) => n.mint_address)
           );
           const ownedMints = allWalletMints.filter(m => allowedMints.has(m));
           return NextResponse.json({ count: ownedMints.length, ownedMints });
         }
+        // If no specific NFTs were selected for the story, fall through to check the entire collection
       }
     }
 

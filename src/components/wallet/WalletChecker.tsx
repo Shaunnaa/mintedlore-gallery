@@ -15,10 +15,12 @@ export function WalletChecker({
   collectionAddress,
   communitySlug,
   vipThreshold,
+  storyId,
 }: {
   collectionAddress: string;
   communitySlug: string;
   vipThreshold: number;
+  storyId?: number;
 }) {
   const { publicKey, connected } = useWallet();
   const [count, setCount] = useState<number | null>(null);
@@ -36,6 +38,7 @@ export function WalletChecker({
           walletAddress: publicKey.toBase58(),
           collectionAddress,
           communitySlug,
+          storyId,
         }),
       })
         .then((res) => res.json())
@@ -49,7 +52,7 @@ export function WalletChecker({
     } else {
       setCount(null);
     }
-  }, [connected, publicKey, collectionAddress, communitySlug]);
+  }, [connected, publicKey, collectionAddress, communitySlug, storyId]);
 
   if (!connected) {
     return (

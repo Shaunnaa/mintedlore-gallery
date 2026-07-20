@@ -5,6 +5,9 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import Link from "next/link";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import dynamic from "next/dynamic";
+import { StaggerContainer, StaggerItem } from "@/components/animations/StaggerGroup";
+import ScrollReveal from "@/components/animations/ScrollReveal";
+import { motion, AnimatePresence } from "framer-motion";
 
 const WalletButton = dynamic(
   async () => (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
@@ -21,6 +24,7 @@ type Community = {
   preferred_view: string;
   description: string;
   created_at: string;
+  parent_slug?: string | null;
 };
 
 function CommunityCard({ community, children }: { community: any, children?: React.ReactNode }) {
@@ -49,13 +53,13 @@ function CommunityCard({ community, children }: { community: any, children?: Rea
 
         <div className="mt-5 flex items-center gap-3">
           <Link
-            href={`/${community.slug}`}
+            href={`/${community.parent_slug ? `${community.parent_slug}/` : ""}${community.slug}`}
             className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs font-semibold text-stone-300 transition hover:border-white/30 hover:text-white"
           >
             View Page →
           </Link>
           <Link
-            href={`/studio/edit/${community.slug}`}
+            href={`/studio/edit/${community.parent_slug ? `${community.parent_slug}/` : ""}${community.slug}`}
             className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs font-semibold text-stone-300 transition hover:border-white/30 hover:text-white"
           >
             Edit
@@ -66,6 +70,58 @@ function CommunityCard({ community, children }: { community: any, children?: Rea
         {children}
       </div>
     </div>
+  );
+}
+
+
+function CommunityGroup({ typeA, childrenData }: { typeA: Community, childrenData: Community[] }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <StaggerItem key={typeA.id}>
+      <CommunityCard community={typeA}>
+        <div className="mt-4 flex items-center gap-2 border-t border-white/5 pt-4">
+          <Link
+            href={`/studio/create-sub?parent=${typeA.id}&symbol=${typeA.collection_address}`}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-dashed py-2 text-xs font-semibold transition ${typeA.collection_address === "star_atlas" ? "border-emerald-500/30 text-emerald-500 hover:border-emerald-400/60 hover:text-emerald-300" : "border-cyan-500/30 text-cyan-500 hover:border-cyan-400/60 hover:text-cyan-300"}`}
+          >
+            + Add Story
+          </Link>
+          {childrenData.length > 0 && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-stone-400 transition hover:bg-white/10 hover:text-white"
+            >
+              <span>{childrenData.length} {childrenData.length === 1 ? 'Story' : 'Stories'}</span>
+              <svg 
+                className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} 
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </CommunityCard>
+
+      <AnimatePresence initial={false}>
+        {isExpanded && childrenData.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className={`ml-8 mt-3 space-y-3 border-l pl-5 ${typeA.collection_address === "star_atlas" ? "border-emerald-500/20" : "border-cyan-500/20"}`}>
+              {childrenData.map(typeB => (
+                <CommunityCard key={typeB.id} community={typeB} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </StaggerItem>
   );
 }
 
@@ -106,7 +162,7 @@ export default function StudioPage() {
               href="/studio/create"
               className="flex items-center gap-2 rounded-full border border-violet-500/50 bg-violet-500/10 px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-violet-300 shadow-[0_0_20px_rgba(139,92,246,0.2)] transition hover:bg-violet-500/20"
             >
-              <span>+</span> New Community
+              <span>+</span> New Collection
             </Link>
           )}
         </div>
@@ -151,35 +207,12 @@ export default function StudioPage() {
             {typeACommunities.filter(c => c.collection_address === "star_atlas").length > 0 && (
               <div>
                 <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-emerald-400">Game Integrations</h2>
-                <div className="space-y-8">
+                <StaggerContainer className="space-y-8">
                   {typeACommunities.filter(c => c.collection_address === "star_atlas").map((typeA) => {
                     const children = typeBCommunities.filter(b => b.parent_community_id === typeA.id);
-                    return (
-                      <div key={typeA.id}>
-                        {/* Type A parent */}
-                        <CommunityCard community={typeA}>
-                          <div className="mt-4 border-t border-white/5 pt-4">
-                            <Link
-                              href={`/studio/create-sub?parent=${typeA.id}&symbol=${typeA.collection_address}`}
-                              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-500/30 py-2 text-xs font-semibold text-emerald-500 transition hover:border-emerald-400/60 hover:text-emerald-300"
-                            >
-                              + Add Story
-                            </Link>
-                          </div>
-                        </CommunityCard>
-
-                        {/* Type B children indented below */}
-                        {children.length > 0 && (
-                          <div className="ml-8 mt-3 space-y-3 border-l border-emerald-500/20 pl-5">
-                            {children.map(typeB => (
-                              <CommunityCard key={typeB.id} community={typeB} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
+                    return <CommunityGroup key={typeA.id} typeA={typeA} childrenData={children} />;
                   })}
-                </div>
+                </StaggerContainer>
               </div>
             )}
 
@@ -187,35 +220,12 @@ export default function StudioPage() {
             {typeACommunities.filter(c => c.collection_address !== "star_atlas").length > 0 && (
               <div>
                 <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-violet-400">Full Collections</h2>
-                <div className="space-y-8">
+                <StaggerContainer className="space-y-8">
                   {typeACommunities.filter(c => c.collection_address !== "star_atlas").map((typeA) => {
                     const children = typeBCommunities.filter(b => b.parent_community_id === typeA.id);
-                    return (
-                      <div key={typeA.id}>
-                        {/* Type A parent */}
-                        <CommunityCard community={typeA}>
-                          <div className="mt-4 border-t border-white/5 pt-4">
-                            <Link
-                              href={`/studio/create-sub?parent=${typeA.id}&symbol=${typeA.collection_address}`}
-                              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/30 py-2 text-xs font-semibold text-cyan-500 transition hover:border-cyan-400/60 hover:text-cyan-300"
-                            >
-                              + Add Story
-                            </Link>
-                          </div>
-                        </CommunityCard>
-
-                        {/* Type B children indented below */}
-                        {children.length > 0 && (
-                          <div className="ml-8 mt-3 space-y-3 border-l border-cyan-500/20 pl-5">
-                            {children.map(typeB => (
-                              <CommunityCard key={typeB.id} community={typeB} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
+                    return <CommunityGroup key={typeA.id} typeA={typeA} childrenData={children} />;
                   })}
-                </div>
+                </StaggerContainer>
               </div>
             )}
           </div>

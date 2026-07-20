@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { StarAtlasHub } from "@/components/games/StarAtlasHub";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { getSupabase, mapCollectionRecord, mapStoryRecord } from "@/lib/supabase";
 import {
   fetchActiveListings,
   fetchCollectionStats,
@@ -18,8 +18,17 @@ export const revalidate = 0; // Ensure fresh data
 export default async function GamePage({ params }: GamePageProps) {
   const { slug } = await params;
   const supabase = getSupabase();
-  const { data: record } = await supabase.from("communities").select("*").eq("slug", slug).maybeSingle();
-  const community = record ? mapCommunityRecord(record) : undefined;
+  let community = undefined;
+  
+  const { data: collectionRecord } = await supabase.from("collection").select("*").eq("slug", slug).maybeSingle();
+  if (collectionRecord) {
+    community = mapCollectionRecord(collectionRecord);
+  } else {
+    const { data: storyRecord } = await supabase.from("stories").select("*").eq("slug", slug).maybeSingle();
+    if (storyRecord) {
+      community = mapStoryRecord(storyRecord);
+    }
+  }
 
   if (!community || (community.collectionType !== "type_game" && community.collectionAddress !== "star_atlas")) {
     return (
@@ -46,11 +55,11 @@ export default async function GamePage({ params }: GamePageProps) {
   }
 
   // ── Load child stories (type B) for this game ──
+  const parentId = community.parentCommunityId || community.id;
   const { data: storyRows } = await supabase
-    .from("communities")
+    .from("stories")
     .select("slug,name,preferred_view")
-    .eq("parent_community_id", community.id)
-    .eq("collection_type", "type_b");
+    .eq("collection_id", parentId);
   const stories = storyRows || [];
 
   // ── Standard Magic Eden Logic ──

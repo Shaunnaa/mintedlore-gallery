@@ -4,7 +4,7 @@ import { WalletChecker } from "@/components/wallet/WalletChecker";
 import { HolderBadge } from "@/components/wallet/HolderBadge";
 import { redirect } from "next/navigation";
 import { StarAtlasHub } from "@/components/games/StarAtlasHub";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { getSupabase, mapCollectionRecord, mapStoryRecord } from "@/lib/supabase";
 import {
   fetchActiveListings,
   fetchCollectionStats,
@@ -12,6 +12,7 @@ import {
   LISTINGS_PAGE_SIZE,
 } from "@/services/magicEden";
 import { getCollectionAssets } from "@/services/metaplex";
+import { ViewTracker } from "@/components/analytics/ViewTracker";
 
 type GroupPageProps = {
   params: Promise<{
@@ -25,11 +26,45 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const { slug } = await params;
   if (!slug || slug.length === 0 || slug.length > 2) return null;
 
-  const targetSlug = slug[slug.length - 1];
-
   const supabase = getSupabase();
-  const { data: record } = await supabase.from("communities").select("*").eq("slug", targetSlug).maybeSingle();
-  const community = record ? mapCommunityRecord(record) : undefined;
+  let community = undefined;
+  let isCollection = false;
+  let isStory = false;
+
+  if (slug.length === 1) {
+    // Top-level path: /fox
+    const { data: collectionRecord } = await supabase.from("collection").select("*").eq("slug", slug[0]).maybeSingle();
+    if (collectionRecord) {
+      community = mapCollectionRecord(collectionRecord);
+      isCollection = true;
+    } else {
+      // Fallback for backwards compatibility with old standalone stories
+      const { data: storyRecord } = await supabase.from("stories").select("*").eq("slug", slug[0]).maybeSingle();
+      if (storyRecord) {
+        community = mapStoryRecord(storyRecord);
+        isStory = true;
+      }
+    }
+  } else if (slug.length === 2) {
+    // Nested path: /fox/chapter-1
+    const parentSlug = slug[0];
+    const storySlug = slug[1];
+    
+    const { data: parentColl } = await supabase.from("collection").select("collection_id").eq("slug", parentSlug).maybeSingle();
+    if (parentColl) {
+      const { data: storyRecord } = await supabase
+        .from("stories")
+        .select("*")
+        .eq("slug", storySlug)
+        .eq("collection_id", parentColl.collection_id)
+        .maybeSingle();
+        
+      if (storyRecord) {
+        community = mapStoryRecord(storyRecord);
+        isStory = true;
+      }
+    }
+  }
 
   if (!community) {
     return (
@@ -56,14 +91,22 @@ export default async function GroupPage({ params }: GroupPageProps) {
   }
 
   // Fetch related chapters (stories) for this collection
-  const { data: relatedRecords } = await supabase
-    .from("communities")
-    .select("slug, name, description, collection_type, preferred_view")
-    .eq("collection_address", community.collectionAddress)
-    .order("id");
+  let relatedRecords: any[] = [];
+  let parentRecord: any = null;
+
+  if (community.collectionType === "type_b") {
+    const { data: parent } = await supabase.from("collection").select("*").eq("collection_id", community.parentCommunityId).maybeSingle();
+    parentRecord = parent;
+    const { data: stories } = await supabase.from("stories").select("*").eq("collection_id", community.parentCommunityId).order("created_at");
+    relatedRecords = stories || [];
+  } else {
+    const { data: parent } = await supabase.from("collection").select("*").eq("collection_id", community.id).maybeSingle();
+    parentRecord = parent;
+    const { data: stories } = await supabase.from("stories").select("*").eq("collection_id", community.id).order("created_at");
+    relatedRecords = stories || [];
+  }
 
   // Determine parent slug for building nested routes
-  const parentRecord = relatedRecords?.find(r => r.collection_type === "type_a");
   const parentSlug = parentRecord?.slug || community.slug;
 
   // Redirect if someone visits a child directly at the root (e.g., /fox-2 -> /fox/fox-2)
@@ -71,12 +114,20 @@ export default async function GroupPage({ params }: GroupPageProps) {
     redirect(`/${parentSlug}/${community.slug}`);
   }
 
-  const relatedChapters = relatedRecords ? relatedRecords.map(r => ({
-    slug: r.collection_type === "type_a" ? r.slug : `${parentSlug}/${r.slug}`,
-    name: r.name,
-    type: r.collection_type,
-    view: r.preferred_view
-  })) : [];
+  const relatedChapters = [
+    {
+      slug: parentSlug,
+      name: parentRecord?.name || community.name,
+      type: "type_a",
+      view: parentRecord?.preferred_view || community.preferredView
+    },
+    ...relatedRecords.map(r => ({
+      slug: `${parentSlug}/${r.slug}`,
+      name: r.name,
+      type: "type_b",
+      view: r.preferred_view
+    }))
+  ];
 
   // ── Primary Source: DAS API vs Magic Eden ──
   const isDasAddress = community.collectionAddress.length > 30;
@@ -134,9 +185,9 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   if (community.collectionType === "type_b") {
     const { data: nfts } = await supabase
-      .from("community_nfts")
+      .from("stories_selection")
       .select("mint_address")
-      .eq("community_id", community.id);
+      .eq("stories_id", community.id);
 
     if (nfts && nfts.length > 0) {
       const mints = nfts.map(n => n.mint_address);
@@ -148,7 +199,11 @@ export default async function GroupPage({ params }: GroupPageProps) {
     }
   }
   return (
-    <main className="min-h-screen bg-neutral-950 text-stone-50">
+    <main className="min-h-screen w-full bg-neutral-950 font-sans text-stone-50 selection:bg-emerald-500/30">
+      <ViewTracker 
+        collection_id={isCollection ? community.id : (isStory ? community.parentCommunityId : undefined)} 
+        stories_id={isStory ? community.id : undefined} 
+      />
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">
         <header className="border-b border-white/10 pb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -202,6 +257,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
           collectionAddress={community.collectionAddress}
           communitySlug={community.slug}
           vipThreshold={community.vipThreshold ?? 1}
+          storyId={isStory ? community.id : undefined}
         />
 
         <CommunityViewSwitcher

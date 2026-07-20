@@ -8,11 +8,11 @@ export function getSupabase() {
   return createClient(url, key);
 }
 
-// Maps database snake_case row to camelCase Community type
+// Maps new `collection` table to the existing UI Community type
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function mapCommunityRecord(row: any): Community {
+export function mapCollectionRecord(row: any): Community {
   return {
-    id: row.id,
+    id: row.collection_id,
     name: row.name,
     slug: row.slug,
     collectionAddress: row.collection_address,
@@ -21,7 +21,25 @@ export function mapCommunityRecord(row: any): Community {
     image: row.image || "/window.svg",
     themeSettings: row.theme_settings,
     vipThreshold: row.vip_threshold,
-    collectionType: (row.collection_address === "star_atlas" && row.collection_type === "type_a") ? "type_game" : row.collection_type,
-    parentCommunityId: row.parent_community_id,
+    collectionType: (row.collection_address === "star_atlas" || row.category === "game") ? "type_game" : "type_a",
+    parentCommunityId: null,
+  };
+}
+
+// Maps new `stories` table to the existing UI Community type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mapStoryRecord(row: any): Community {
+  return {
+    id: row.stories_id,
+    name: row.name,
+    slug: row.slug,
+    collectionAddress: row.collection_address,
+    preferredView: row.preferred_view,
+    description: row.description || "",
+    image: row.image || "/window.svg",
+    themeSettings: row.theme_settings,
+    vipThreshold: row.vip_threshold,
+    collectionType: "type_b",
+    parentCommunityId: row.collection_id,
   };
 }

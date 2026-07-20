@@ -138,7 +138,9 @@ function SceneRow({ scene, index, onChange, onRemove, canRemove }: {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function EditCommunityPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams<{ slug: string[] }>();
+  const apiRoute = `/api/community/${slug.join('/')}`;
+  const publicRoute = slug.join('/');
   const { connected, publicKey } = useWallet();
 
   const [community, setCommunity] = useState<Community | null>(null);
@@ -172,7 +174,7 @@ export default function EditCommunityPage() {
 
   // Load community from API
   useEffect(() => {
-    fetch(`/api/community/${slug}`)
+    fetch(apiRoute)
       .then(r => r.json())
       .then(data => {
         if (!data.community) { setLoading(false); return; }
@@ -223,7 +225,7 @@ export default function EditCommunityPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [slug]);
+  }, [apiRoute]);
 
   const updateScene = (i: number, updated: StoryScene) =>
     setScenes(prev => prev.map((s, idx) => idx === i ? updated : s));
@@ -281,7 +283,7 @@ export default function EditCommunityPage() {
     }
 
     try {
-      const res = await fetch(`/api/community/${slug}`, {
+      const res = await fetch(apiRoute, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -312,7 +314,7 @@ export default function EditCommunityPage() {
     setError(null);
     
     try {
-      const res = await fetch(`/api/community/${slug}`, {
+      const res = await fetch(apiRoute, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -365,8 +367,8 @@ export default function EditCommunityPage() {
             <p className="text-xs text-stone-500">/{community.slug}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href={`/${community.slug}`} target="_blank"
-              className="rounded-lg border border-white/10 px-3 py-2 text-xs text-stone-400 transition hover:text-white">
+            <Link href={`/${publicRoute}`} target="_blank"
+              className="hidden rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-stone-300 transition hover:border-white/30 hover:text-white sm:inline-block">
               Preview ↗
             </Link>
             <button onClick={handleSave} disabled={saving || !connected}
@@ -397,11 +399,11 @@ export default function EditCommunityPage() {
             </div>
             {!isTypeB && (
               <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-emerald-500">VIP Threshold</label>
-                <input type="number" min="1" value={vipThreshold}
-                  onChange={e => setVipThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-emerald-500">VIP Threshold (Set to 0 to Disable)</label>
+                <input type="number" min="0" value={vipThreshold}
+                  onChange={e => setVipThreshold(Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-500/50" />
-                <p className="mt-1 text-[10px] text-stone-500">Number of NFTs required to access VIP perks.</p>
+                <p className="mt-1 text-[10px] text-stone-500">If set to 0, it will just show the number of NFTs the user holds instead of a stamp card.</p>
               </div>
             )}
             {!isTypeB && !isGameStory && (
@@ -644,6 +646,13 @@ export default function EditCommunityPage() {
                       + Add Scene
                     </button>
                   )}
+                  <Link
+                    href={`/${publicRoute}`}
+                    className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-stone-300 transition hover:border-white/20 hover:text-white"
+                    target="_blank"
+                  >
+                    Preview ↗
+                  </Link>
                 </div>
                 <div className="mb-4">
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stone-500">Story Title</label>

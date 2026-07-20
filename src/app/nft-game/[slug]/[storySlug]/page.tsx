@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { getSupabase, mapCollectionRecord, mapStoryRecord } from "@/lib/supabase";
 import { StarAtlasHub } from "@/components/games/StarAtlasHub";
 import { fetchActiveListings, fetchCollectionStats, LISTINGS_PAGE_SIZE } from "@/services/magicEden";
 import { notFound } from "next/navigation";
@@ -19,21 +19,21 @@ export default async function GameStoryPage({ params }: GameStoryPageProps) {
 
   // Verify parent game exists
   const { data: gameRec } = await supabase
-    .from("communities")
+    .from("collection")
     .select("*")
     .eq("slug", slug)
     .maybeSingle();
-  const gameCommunity = gameRec ? mapCommunityRecord(gameRec) : undefined;
+  const gameCommunity = gameRec ? mapCollectionRecord(gameRec) : undefined;
   if (!gameCommunity || gameCommunity.collectionType !== "type_game") notFound();
 
   // Load the story that belongs to this game
   const { data: storyRec } = await supabase
-    .from("communities")
+    .from("stories")
     .select("*")
     .eq("slug", storySlug)
-    .eq("parent_community_id", gameCommunity.id)
+    .eq("collection_id", gameCommunity.id)
     .maybeSingle();
-  const storyCommunity = storyRec ? mapCommunityRecord(storyRec) : undefined;
+  const storyCommunity = storyRec ? mapStoryRecord(storyRec) : undefined;
   if (!storyCommunity) notFound();
 
   // Fetch stats for the story's collection (inherits same address as the game)
@@ -46,10 +46,9 @@ export default async function GameStoryPage({ params }: GameStoryPageProps) {
 
   // Load all child stories for the parent game to render the toggle
   const { data: storyRows } = await supabase
-    .from("communities")
+    .from("stories")
     .select("slug,name,preferred_view")
-    .eq("parent_community_id", gameCommunity.id)
-    .eq("collection_type", "type_b");
+    .eq("collection_id", gameCommunity.id);
   const stories = storyRows || [];
 
   return (

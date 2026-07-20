@@ -1,101 +1,283 @@
-import Image from "next/image";
 import Link from "next/link";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import SearchBar from "@/components/search/SearchBar";
+import { getSupabase } from "@/lib/supabase";
+import HeroSlider from "@/components/home/HeroSlider";
+import AdBanner from "@/components/home/AdBanner";
+import ScrollReveal from "@/components/animations/ScrollReveal";
+import { StaggerContainer, StaggerItem } from "@/components/animations/StaggerGroup";
+import HomeTracker from "@/components/home/HomeTracker";
 
-export const revalidate = 0; // Ensure fresh data
+export const revalidate = 0; // Prevent Next.js from aggressively caching the homepage so views update
 
-export default async function Home() {
+export default async function HomeRedesign() {
   const supabase = getSupabase();
-  const { data: records } = await supabase.from("communities").select("*").order("created_at", { ascending: false });
-  const communities = (records || [])
-    .map(mapCommunityRecord)
-    .filter((c) => c.collectionType !== "type_b");
+
+  // 1. Fetch Promotions
+  const { data: promotions } = await supabase.from("promotions").select("*").eq("is_active", true);
+  const heroSlides = promotions?.filter(p => p.placement === "hero") || [];
+  const sidebarAds = promotions?.filter(p => p.placement === "sidebar") || [];
+
+  // 2. Fetch Recent Stories
+  const { data: recentStoriesData } = await supabase
+    .from("stories")
+    .select("*, collection:collection_id(name, slug)")
+    .order("created_at", { ascending: false })
+    .limit(4);
+    
+  const recentStories = recentStoriesData || [];
+
+  // 3. Fetch Top Views
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const dateStr = sevenDaysAgo.toISOString().split("T")[0];
+
+  const { data: viewsData } = await supabase
+    .from("analytics_daily_views")
+    .select(`
+      view_count, 
+      collection:collection_id(collection_id, name, slug, image),
+      story:stories_id(stories_id, name, slug, image, collection:collection_id(slug))
+    `)
+    .gte("view_date", dateStr);
+
+  const collectionStats: Record<string, any> = {};
+  const storyStats: Record<string, any> = {};
+  
+  if (viewsData) {
+    for (const row of viewsData) {
+      if (row.collection) {
+        const coll = Array.isArray(row.collection) ? row.collection[0] : row.collection;
+        if (coll && coll.collection_id) {
+          const cid = coll.collection_id.toString();
+          if (!collectionStats[cid]) {
+            collectionStats[cid] = {
+              id: coll.collection_id,
+              name: coll.name,
+              slug: coll.slug,
+              image: coll.image,
+              total_views: 0
+            };
+          }
+          collectionStats[cid].total_views += row.view_count;
+        }
+      }
+      
+      if (row.story) {
+        const st = Array.isArray(row.story) ? row.story[0] : row.story;
+        if (st && st.stories_id) {
+          const sid = st.stories_id.toString();
+          if (!storyStats[sid]) {
+            const parentColl = Array.isArray(st.collection) ? st.collection[0] : st.collection;
+            storyStats[sid] = {
+              id: st.stories_id,
+              name: st.name,
+              slug: st.slug,
+              image: st.image,
+              parent_slug: parentColl?.slug,
+              total_views: 0
+            };
+          }
+          storyStats[sid].total_views += row.view_count;
+        }
+      }
+    }
+  }
+
+  const topCollections = Object.values(collectionStats)
+    .sort((a, b) => b.total_views - a.total_views)
+    .slice(0, 5);
+    
+  const topStories = Object.values(storyStats)
+    .sort((a, b) => b.total_views - a.total_views)
+    .slice(0, 5);
+
+  // 4. Fetch all items for search
+  const { data: allCollections } = await supabase.from("collection").select("name, slug, category");
+  const { data: allStories } = await supabase.from("stories").select("name, slug, collection:collection_id(slug)");
+
+  const searchItems = [
+    ...(allCollections || []).map(c => ({
+      name: c.name,
+      slug: c.slug,
+      type: c.category === "game" ? "Games" : "Collection"
+    })),
+    ...(allStories || []).map(s => {
+      const parentSlug = Array.isArray(s.collection) ? s.collection[0]?.slug : s.collection?.slug;
+      return {
+        name: s.name,
+        slug: parentSlug ? `${parentSlug}/${s.slug}` : s.slug,
+        type: "Stories"
+      }
+    })
+  ];
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-stone-50">
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-5 py-8 sm:px-8 lg:px-10">
-        <header className="min-h-[72vh] border-b border-white/10 py-10 lg:py-16">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-3 w-3 bg-emerald-300" />
-            </span>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-300">
-              Live Solana Community Platform
-            </p>
-          </div>
+    <main className="min-h-screen w-full bg-neutral-950 font-sans text-stone-50 selection:bg-emerald-500/30">
+      <HomeTracker />
+      
+      {/* ── 1. HERO CAROUSEL ── */}
+      <ScrollReveal delay={0.1} yOffset={20}>
+        <HeroSlider slides={heroSlides} />
+      </ScrollReveal>
 
-          <div className="mt-16 grid gap-10 lg:grid-cols-[1fr_360px] lg:items-end">
-            <div>
-              <h1 className="max-w-5xl text-5xl font-semibold tracking-normal text-white sm:text-7xl lg:text-8xl">
-                Discover the Stories Behind the Art.
-              </h1>
-              <p className="mt-6 max-w-2xl text-xl leading-8 text-stone-300">
-                The premier hub for Solana NFT communities.
-              </p>
-              <p className="mt-5 max-w-3xl text-base leading-7 text-stone-400">
-                Explore curated group profiles, live marketplace metrics, active
-                NFT galleries, and timeline-driven stories in one premium Web3
-                experience.
-              </p>
-            </div>
+      <div className="mb-8"></div>
 
-            <div className="border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/30">
-              <p className="text-sm text-stone-400">Platform Index</p>
-              <p className="mt-2 text-4xl font-semibold text-white">
-                {communities.length}
-              </p>
-              <p className="mt-2 text-sm text-stone-400">
-                communities ready for gallery and timeline exploration
-              </p>
-            </div>
-          </div>
-        </header>
+      {/* ── SEARCH & DISCOVERY BAR ── */}
+      <ScrollReveal delay={0.2} yOffset={20}>
+        <SearchBar
+          placeholder="Search collections, games, and stories..."
+          filterOptions={["All", "Collection", "Games", "Stories"]}
+          items={searchItems}
+          className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-8 mb-8"
+        />
+      </ScrollReveal>
 
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mt-12 space-y-20 pb-20">
+        
+        {/* ── 2. NEWLY MINTED LORE (New Stories) ── */}
         <section>
-          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-300">
-                Select a community
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold text-white">
-                Community Hubs
-              </h2>
+          <ScrollReveal yOffset={20}>
+            <div className="mb-8 border-b border-white/10 pb-4">
+              <h2 className="text-2xl font-bold text-white tracking-tight">Newly Minted Lore</h2>
+              <p className="text-sm text-stone-400 mt-1">The latest chapters published across the ecosystem.</p>
             </div>
-          </div>
+          </ScrollReveal>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            {communities.map((community) => (
-              <Link
-                key={community.id}
-                href={`/${community.slug}`}
-                className="group grid gap-6 border border-white/10 bg-white/[0.02] p-4 shadow-xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-emerald-400/40 hover:bg-white/[0.04] sm:grid-cols-[140px_1fr] sm:items-center rounded-xl"
-              >
-                <div className="relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-neutral-950 rounded-lg">
-                  {community.image === "/window.svg" ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-900/40 to-neutral-950 transition duration-500 group-hover:scale-110">
-                      <span className="text-5xl font-black uppercase text-white/10">{community.name.substring(0, 2)}</span>
-                    </div>
-                  ) : (
-                    <Image
-                      src={community.image}
-                      alt={community.name}
-                      fill
-                      className="object-cover opacity-60 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
-                      unoptimized
-                    />
-                  )}
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recentStories.length > 0 ? recentStories.map((story, i) => {
+              const communityName = Array.isArray(story.collection) 
+                ? story.collection[0]?.name 
+                : story.collection?.name || "Unknown";
+              const parentSlug = Array.isArray(story.collection) 
+                ? story.collection[0]?.slug 
+                : story.collection?.slug || "";
+                
+              const publishDate = new Date(story.created_at);
+              const isRecent = (Date.now() - publishDate.getTime()) < 86400000;
+              const timeDisplay = isRecent ? "Today" : publishDate.toLocaleDateString();
+
+              return (
+              <StaggerItem key={i}>
+                <Link href={`/${parentSlug ? parentSlug + "/" : ""}${story.slug}`} className="group flex flex-col gap-4">
+                <div className="aspect-[4/3] w-full rounded-2xl bg-stone-900 border border-white/10 overflow-hidden relative group-hover:border-emerald-500/50 transition-colors">
+                   {story.image ? (
+                     <img src={story.image} alt={story.name} className="w-full h-full object-cover opacity-80" />
+                   ) : (
+                     <div className="absolute inset-0 flex items-center justify-center text-stone-700 font-bold uppercase tracking-widest text-xs">
+                       {communityName.substring(0,3)}
+                     </div>
+                   )}
+                   <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+                     Chapter
+                   </div>
                 </div>
-                <div className="flex flex-col justify-center p-2 sm:p-0">
-                  <h3 className="text-3xl font-bold text-white transition group-hover:text-emerald-300">
-                    {community.name}
-                  </h3>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-500 mb-1">{communityName}</p>
+                  <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">{story.name}</h3>
+                  <p className="text-xs text-stone-500 mt-2">{timeDisplay}</p>
                 </div>
               </Link>
-            ))}
-          </div>
+              </StaggerItem>
+            )}) : (
+              <div className="col-span-full py-12 text-center border border-white/10 border-dashed rounded-2xl text-stone-500">
+                No recent stories published yet.
+              </div>
+            )}
+          </StaggerContainer>
         </section>
-      </section>
+        
+        {/* ── 3. PROMOTED AD (Middle Banner) ── */}
+        <ScrollReveal yOffset={30}>
+          <AdBanner ads={sidebarAds} />
+        </ScrollReveal>
+
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+          {/* ── 4. TOP TRENDING COLLECTIONS ── */}
+          <section>
+            <ScrollReveal yOffset={20}>
+              <div className="mb-8 border-b border-white/10 pb-4">
+                <h2 className="text-xl font-bold text-white tracking-tight">Top Collections</h2>
+                <p className="text-sm text-stone-400 mt-1">Most read hubs this week.</p>
+              </div>
+            </ScrollReveal>
+            
+            <StaggerContainer className="flex flex-col gap-4">
+              {topCollections.length > 0 ? topCollections.map((comm, index) => (
+                <StaggerItem key={comm.id}>
+                <Link href={`/${comm.slug}`} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
+                  <div className="text-2xl font-black text-stone-700 w-8 text-center">{index + 1}</div>
+                  <div className="h-14 w-14 rounded-xl bg-stone-800 shrink-0 flex items-center justify-center overflow-hidden">
+                    {comm.image && comm.image !== "/window.svg" ? (
+                      <img src={comm.image} alt={comm.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-stone-600">{comm.name.substring(0,2).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white">{comm.name}</h3>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-stone-400">
+                      <span>👁️ {comm.total_views} Views</span>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block">
+                    <button className="rounded-full bg-emerald-500/10 text-emerald-400 px-4 py-1.5 text-xs font-bold hover:bg-emerald-500 hover:text-black transition-colors">
+                      Visit Hub
+                    </button>
+                  </div>
+                </Link>
+                </StaggerItem>
+              )) : (
+                <div className="py-12 text-center border border-white/10 border-dashed rounded-2xl text-stone-500">
+                  No reading data available for this week.
+                </div>
+              )}
+            </StaggerContainer>
+          </section>
+
+          {/* ── 4. TOP TRENDING STORIES ── */}
+          <section>
+            <ScrollReveal yOffset={20}>
+              <div className="mb-8 border-b border-white/10 pb-4">
+                <h2 className="text-xl font-bold text-white tracking-tight">Top Stories</h2>
+                <p className="text-sm text-stone-400 mt-1">Most read chapters this week.</p>
+              </div>
+            </ScrollReveal>
+            
+            <StaggerContainer className="flex flex-col gap-4">
+              {topStories.length > 0 ? topStories.map((story, index) => (
+                <StaggerItem key={story.id}>
+                <Link href={`/${story.parent_slug ? story.parent_slug + "/" : ""}${story.slug}`} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-white/10 transition-colors">
+                  <div className="text-2xl font-black text-stone-700 w-8 text-center">{index + 1}</div>
+                  <div className="h-14 w-14 rounded-xl bg-stone-800 shrink-0 flex items-center justify-center overflow-hidden">
+                    {story.image && story.image !== "/window.svg" ? (
+                      <img src={story.image} alt={story.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-stone-600">{story.name.substring(0,2).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white line-clamp-1">{story.name}</h3>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-stone-400">
+                      <span>👁️ {story.total_views} Views</span>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block">
+                    <button className="rounded-full bg-emerald-500/10 text-emerald-400 px-4 py-1.5 text-xs font-bold hover:bg-emerald-500 hover:text-black transition-colors">
+                      Read Story
+                    </button>
+                  </div>
+                </Link>
+                </StaggerItem>
+              )) : (
+                <div className="py-12 px-4 text-center border border-white/10 border-dashed rounded-2xl text-stone-500 text-sm">
+                  No reading data available for this week.
+                </div>
+              )}
+            </StaggerContainer>
+          </section>
+        </div>
+
+      </div>
     </main>
   );
 }
