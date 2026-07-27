@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { getSupabase, mapCommunityRecord } from "@/lib/supabase";
+import { getSupabase, mapCollectionRecord } from "@/lib/supabase";
+import GamesSearch from "./GamesSearch";
+import ScrollReveal from "@/components/animations/ScrollReveal";
+import { StaggerContainer, StaggerItem } from "@/components/animations/StaggerGroup";
 
 export const revalidate = 0;
 
@@ -24,32 +27,32 @@ function getGameMeta(collectionAddress: string) {
 
 export default async function GamesPage() {
   const supabase = getSupabase();
-  const { data: records } = await supabase
-    .from("communities")
+  const { data: collectionsData } = await supabase
+    .from("collection")
     .select("*")
     .order("created_at", { ascending: false });
 
   // Fetch child stories to count them
-  const { data: childRecords } = await supabase
-    .from("communities")
-    .select("parent_community_id")
-    .eq("collection_type", "type_b");
+  const { data: storiesData } = await supabase
+    .from("stories")
+    .select("collection_id");
 
-  const storyCountsByParent = (childRecords || []).reduce((acc: Record<string, number>, child) => {
-    if (child.parent_community_id) {
-      acc[child.parent_community_id] = (acc[child.parent_community_id] || 0) + 1;
+  const storyCountsByParent = (storiesData || []).reduce((acc: Record<string, number>, child) => {
+    if (child.collection_id) {
+      acc[child.collection_id] = (acc[child.collection_id] || 0) + 1;
     }
     return acc;
   }, {});
 
-  const communities = (records || [])
-    .map(mapCommunityRecord)
+  const communities = (collectionsData || [])
+    .map(mapCollectionRecord)
     .filter((c) => c.collectionType === "type_game");
 
   return (
     <main className="min-h-screen bg-neutral-950 text-stone-50">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-5 py-10 sm:px-8 lg:px-10">
         {/* ── Header ── */}
+        <ScrollReveal yOffset={20}>
         <header className="border-b border-white/10 pb-10">
           <div className="flex items-center gap-3">
             <span className="relative flex h-3 w-3">
@@ -68,9 +71,18 @@ export default async function GamesPage() {
             Select a game to explore its characters, ships, and custom lore stories created by community owners.
           </p>
         </header>
+        </ScrollReveal>
+
+        {/* ── Search Bar ── */}
+        <ScrollReveal yOffset={20} delay={0.1}>
+        <GamesSearch
+          items={communities.map(c => ({ name: c.name, slug: c.slug, type: "Games" }))}
+        />
+        </ScrollReveal>
 
         {/* ── Game Cards Grid ── */}
         <section>
+          <ScrollReveal yOffset={20}>
           <div className="mb-6">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-cyan-300">
               Available Games
@@ -79,25 +91,21 @@ export default async function GamesPage() {
               {communities.length} {communities.length === 1 ? "Game" : "Games"}
             </h2>
           </div>
+          </ScrollReveal>
 
           {communities.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] py-24 text-center">
               <span className="text-5xl">🎮</span>
               <p className="mt-4 text-stone-500">No game communities found yet.</p>
-              <Link
-                href="/studio/create"
-                className="mt-6 rounded-full bg-cyan-500 px-5 py-2 text-sm font-semibold text-neutral-950 hover:bg-cyan-400"
-              >
-                Create a Game Community
-              </Link>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <StaggerContainer className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {communities.map((community) => {
                 const meta = getGameMeta(community.collectionAddress);
                 const storyCount = storyCountsByParent[community.id] || 0;
 
                 return (
+                  <StaggerItem key={community.id}>
                   <Link
                     key={community.id}
                     href={`/nft-game/${community.slug}`}
@@ -158,9 +166,10 @@ export default async function GamesPage() {
                       </div>
                     </div>
                   </Link>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerContainer>
           )}
         </section>
       </section>

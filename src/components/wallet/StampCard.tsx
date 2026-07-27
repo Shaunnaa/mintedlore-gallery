@@ -9,6 +9,36 @@ type StampCardProps = {
 export function StampCard({ count, threshold, isGranted = false }: StampCardProps) {
   const stamps = Array.from({ length: threshold }, (_, i) => i < count);
 
+  // If threshold is 0 or disabled, just show how many NFTs they hold
+  if (!threshold || threshold <= 0) {
+    return (
+      <div
+        className={`
+          relative w-full overflow-hidden rounded-2xl border p-6 text-center transition-all duration-700
+          ${count > 0
+            ? "border-emerald-500/50 bg-emerald-500/10 shadow-[0_0_50px_rgba(16,185,129,0.15)]"
+            : "border-white/10 bg-white/5"
+          }
+        `}
+      >
+        <div className={`absolute top-0 left-0 right-0 h-[3px] ${count > 0 ? "bg-gradient-to-r from-emerald-500 via-emerald-300 to-emerald-500" : "bg-white/20"}`} />
+        
+        <h3 className={`mb-1 text-xs font-black uppercase tracking-[0.25em] ${count > 0 ? "text-emerald-400" : "text-stone-400"}`}>
+          Holder Status
+        </h3>
+        
+        <div className="flex flex-col items-center justify-center mt-2 mb-2">
+          <span className={`text-5xl font-black ${count > 0 ? "text-white drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "text-stone-500"}`}>
+            {count}
+          </span>
+          <span className="text-sm font-bold uppercase tracking-widest text-stone-500 mt-2">
+            NFT{count !== 1 ? "s" : ""} Held
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`
