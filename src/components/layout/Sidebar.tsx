@@ -261,6 +261,22 @@ export function Sidebar() {
           </div>
         </div>
 
+        {/* ── Follow on X ── */}
+        <div className="border-t border-white/10 px-2 py-2">
+          <a
+            href="https://x.com/MintedLoreGal"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Follow @MintedLoreGal on X"
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-stone-400 transition hover:bg-white/5 hover:text-white ${collapsed ? "justify-center" : ""}`}
+          >
+            <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            {!collapsed && <span className="flex-1 text-xs">@MintedLoreGal</span>}
+          </a>
+        </div>
+
         {/* ── Collapse Toggle (Desktop Only) ── */}
         <button
           onClick={() => setCollapsed(!collapsed)}

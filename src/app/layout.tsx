@@ -18,9 +18,35 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MintedLore Gallery",
-  description: "A Solana NFT storytelling gallery.",
+  description: "An immersive digital gallery and storytelling ecosystem for NFT communities on Solana. Explore narrative universes, unlock token-gated lore, and curate your public profile.",
+  metadataBase: new URL("https://mintedlore-gallery.vercel.app"),
+  openGraph: {
+    title: "MintedLore Gallery",
+    description: "An immersive digital gallery and storytelling ecosystem for NFT communities on Solana.",
+    url: "https://mintedlore-gallery.vercel.app",
+    siteName: "MintedLore Gallery",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/full-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "MintedLore Gallery",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MintedLore Gallery",
+    description: "Where digital art comes alive. An immersive storytelling gallery on Solana.",
+    site: "@MintedLoreGal",
+    creator: "@MintedLoreGal",
+    images: ["/full-logo.png"],
+  },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
